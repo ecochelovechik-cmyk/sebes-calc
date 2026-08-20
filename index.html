@@ -1,0 +1,712 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Себестоимость из Китая</title>
+
+<style>
+  :root {
+    --paper:   #EDF0F2;
+    --card:    #FFFFFF;
+    --field:   #E7EAEC;
+    --ink:     #152029;
+    --ink-2:   #5C6D79;
+    --line:    #D5DDE2;
+    --accent:  #BC5127;
+    --accent-soft: #FBE2D4;
+    --good:    #0E7A63;
+    --on-accent: #FFFFFF;
+    --shadow:  0 1px 2px rgba(21,32,41,.06), 0 8px 24px rgba(21,32,41,.05);
+
+    --sans: ui-sans-serif, -apple-system, "Segoe UI Variable Text", "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper:   #10161B;
+      --card:    #1A2228;
+      --field:   #131A20;
+      --ink:     #E7EDF1;
+      --ink-2:   #94A5B1;
+      --line:    #2A353D;
+      --accent:  #EE8A56;
+      --accent-soft: #3B2418;
+      --good:    #45BFA3;
+      --on-accent: #17110C;
+      --shadow:  0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --paper:   #10161B;
+    --card:    #1A2228;
+    --field:   #131A20;
+    --ink:     #E7EDF1;
+    --ink-2:   #94A5B1;
+    --line:    #2A353D;
+    --accent:  #EE8A56;
+    --accent-soft: #3B2418;
+    --good:    #45BFA3;
+      --on-accent: #17110C;
+    --shadow:  0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.28);
+  }
+
+  body {
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 16px;
+    line-height: 1.45;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  .wrap {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: 20px 16px 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  /* ---------- шапка ---------- */
+  header { display: flex; flex-direction: column; gap: 4px; }
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: -.01em;
+    text-wrap: balance;
+  }
+  .sub { color: var(--ink-2); font-size: 13px; }
+
+  /* ---------- карточка-раздел ---------- */
+  section {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: var(--shadow);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .cap {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--ink-2);
+  }
+
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .grid > .full { grid-column: 1 / -1; }
+
+  label { display: flex; flex-direction: column; gap: 5px; min-width: 0; }
+  [hidden] { display: none !important; }
+  .lb { font-size: 13px; color: var(--ink-2); }
+  .lb b { color: var(--ink); font-weight: 600; }
+
+  input[type="text"], input[type="number"] {
+    font-family: var(--mono);
+    font-size: 17px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    background: var(--field);
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    padding: 10px 11px;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    /* чтобы поле не пряталось под плашкой с итогом при фокусе */
+    scroll-margin-bottom: 100px;
+  }
+  input.txt { font-family: var(--sans); font-size: 16px; }
+  input:focus-visible, button:focus-visible, .chip:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+  .hint { font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+  /* ---------- переключатель растаможки ---------- */
+  .seg { display: flex; background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; }
+  .seg button {
+    flex: 1;
+    font-family: var(--sans);
+    font-size: 13px;
+    color: var(--ink-2);
+    background: none;
+    border: 0;
+    border-radius: 7px;
+    padding: 7px 4px;
+    cursor: pointer;
+  }
+  .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+
+  /* ---------- фото ---------- */
+  .photorow { display: flex; gap: 12px; align-items: center; }
+  .thumb {
+    width: 74px; height: 74px; flex: none;
+    border-radius: 11px;
+    border: 1px dashed var(--line);
+    background: var(--field) center/cover no-repeat;
+    display: grid; place-items: center;
+    color: var(--ink-2); font-size: 11px; text-align: center;
+    cursor: pointer;
+  }
+  .thumb.has { border-style: solid; }
+  input[type="file"] { display: none; }
+
+  /* ---------- расчёт ---------- */
+  .rows { display: flex; flex-direction: column; }
+  .row {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .row:last-child { border-bottom: 0; }
+  .row .v { font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 15px; white-space: nowrap; }
+  .row.sub-row { padding-left: 14px; color: var(--ink-2); font-size: 13px; }
+  .row.sub-row .v { font-size: 13px; }
+  .row.total { border-bottom: 0; padding-top: 12px; }
+  .row.total .k { font-weight: 600; }
+  .row.total .v { font-size: 17px; font-weight: 700; color: var(--accent); }
+
+  .perbox { font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+  /* ---------- итог, липнет к низу ---------- */
+  .bar {
+    position: sticky; bottom: 0;
+    margin: 4px -16px 0;
+    padding: 9px 16px calc(9px + env(safe-area-inset-bottom));
+    background: var(--accent-soft);
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -6px 18px rgba(21,32,41,.10);
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  }
+  .bar .k { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); font-weight: 700; }
+  .bar .big { font-family: var(--mono); font-size: 22px; font-weight: 700; color: var(--accent); font-variant-numeric: tabular-nums; letter-spacing: -.02em; }
+  .bar .usd { font-family: var(--mono); font-size: 12px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+  /* ---------- кнопки и список ---------- */
+  .btns { display: flex; gap: 8px; flex-wrap: wrap; }
+  button.act {
+    font-family: var(--sans); font-size: 14px; font-weight: 600;
+    color: var(--ink); background: var(--field);
+    border: 1px solid var(--line); border-radius: 9px;
+    padding: 9px 14px; cursor: pointer;
+  }
+  button.act.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+
+  ul.saved { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; list-style: none; }
+  ul.saved li {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--field); border: 1px solid var(--line); border-radius: 10px;
+    padding: 8px 10px;
+  }
+  ul.saved .nm { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  ul.saved .pr { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--good); white-space: nowrap; }
+  ul.saved button { background: none; border: 0; color: var(--ink-2); font-size: 15px; cursor: pointer; padding: 2px 4px; font-family: var(--sans); }
+  ul.saved img { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; flex: none; }
+  ul.saved input[type="checkbox"], .allpick input[type="checkbox"] {
+    width: 18px; height: 18px; flex: none; accent-color: var(--accent); cursor: pointer;
+  }
+  .empty { font-size: 13px; color: var(--ink-2); }
+
+  .listhead { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; font-size: 13px; color: var(--ink-2); }
+  .allpick { display: flex; flex-direction: row; align-items: center; gap: 7px; cursor: pointer; }
+  button.act:disabled { opacity: .4; cursor: default; }
+
+  footer { color: var(--ink-2); font-size: 12px; padding: 4px 2px 20px; line-height: 1.6; }
+  footer code { font-family: var(--mono); font-size: 11px; }
+
+  @media (max-width: 380px) {
+    .grid { grid-template-columns: 1fr; }
+    .bar .big { font-size: 23px; }
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <h1>Себестоимость из Китая</h1>
+    <div class="sub">Цена в юанях → доставка по объёму → растаможка → сум за штуку</div>
+  </header>
+
+  <!-- 1. ТОВАР -->
+  <section>
+    <div class="cap">Товар</div>
+    <div class="photorow">
+      <label class="thumb" id="thumb" for="photo">Фото<br>товара</label>
+      <input type="file" id="photo" accept="image/*">
+      <label style="flex:1">
+        <span class="lb">Название</span>
+        <input type="text" class="txt" id="name" placeholder="Вакуумные пакеты 60×80">
+      </label>
+    </div>
+    <div class="grid">
+      <label>
+        <span class="lb"><b>Цена</b> ¥ за шт</span>
+        <input type="text" inputmode="decimal" id="priceCny" value="7">
+      </label>
+      <label>
+        <span class="lb"><b>Кол-во</b> в коробке</span>
+        <input type="text" inputmode="decimal" id="perBox" value="80">
+      </label>
+      <label>
+        <span class="lb"><b>СВМ</b> коробки, м³</span>
+        <input type="text" inputmode="decimal" id="cbm" value="0,24">
+      </label>
+      <label>
+        <span class="lb"><b>Вес</b> коробки, кг</span>
+        <input type="text" inputmode="decimal" id="weight" value="">
+      </label>
+    </div>
+  </section>
+
+  <!-- 2. КУРСЫ И ТАРИФЫ -->
+  <section>
+    <div class="cap">Курсы и тарифы</div>
+    <div class="grid">
+      <label>
+        <span class="lb"><b>Курс доллара</b> ¥ за $</span>
+        <input type="text" inputmode="decimal" id="rateCny" value="6,67">
+      </label>
+      <label>
+        <span class="lb"><b>Доставка</b> $ за м³</span>
+        <input type="text" inputmode="decimal" id="freight" value="110">
+      </label>
+      <div class="full">
+        <span class="lb" style="display:block;margin-bottom:5px">Растаможка считается</span>
+        <div class="seg" id="seg">
+          <button type="button" data-mode="unit" aria-pressed="true">за штуку, $</button>
+          <button type="button" data-mode="kg" aria-pressed="false">за кг, $</button>
+        </div>
+      </div>
+      <label id="wrapUnit">
+        <span class="lb">Растаможка <b>штука</b>, $</span>
+        <input type="text" inputmode="decimal" id="customsUnit" value="0,35">
+      </label>
+      <label id="wrapKg" hidden>
+        <span class="lb">Растаможка <b>кг</b>, $</span>
+        <input type="text" inputmode="decimal" id="customsKg" value="">
+        <span class="hint">нужен вес коробки</span>
+      </label>
+      <label>
+        <span class="lb"><b>Курс сумм</b> за $</span>
+        <input type="text" inputmode="decimal" id="rateUzs" value="12000">
+      </label>
+      <label>
+        <span class="lb">Доп. расходы, сум/шт</span>
+        <input type="text" inputmode="decimal" id="extraUzs" value="0">
+        <span class="hint">упаковка, доставка до склада</span>
+      </label>
+    </div>
+  </section>
+
+  <!-- 3. РАСЧЁТ -->
+  <section>
+    <div class="cap">Расчёт на 1 штуку</div>
+    <div class="rows">
+      <div class="row"><span class="k">Цена товара 1 шт</span><span class="v" id="oGoods">—</span></div>
+      <div class="row"><span class="k">Доставка + растаможка 1 шт</span><span class="v" id="oLogi">—</span></div>
+      <div class="row sub-row"><span class="k">из них доставка по объёму</span><span class="v" id="oFreight">—</span></div>
+      <div class="row sub-row"><span class="k">из них растаможка</span><span class="v" id="oCustoms">—</span></div>
+      <div class="row"><span class="k">Доп. расходы</span><span class="v" id="oExtra">—</span></div>
+      <div class="row total"><span class="k">Себестоимость товара, $</span><span class="v" id="oUsd">—</span></div>
+    </div>
+    <div class="perbox" id="oBox">—</div>
+  </section>
+
+  <!-- 4. СОХРАНЁННЫЕ -->
+  <section>
+    <div class="cap">Мои расчёты</div>
+    <div class="btns">
+      <button type="button" class="act primary" id="save">Сохранить товар</button>
+      <button type="button" class="act" id="reset">Очистить поля</button>
+    </div>
+    <div class="listhead" id="listhead" hidden>
+      <label class="allpick"><input type="checkbox" id="pickAll"> Выбрать все</label>
+      <button type="button" class="act" id="download" disabled>Скачать (<span id="pickCount">0</span>)</button>
+    </div>
+    <ul class="saved" id="list"></ul>
+    <div class="empty" id="empty">Пока пусто. Заполните поля и нажмите «Сохранить товар» — расчёт останется в телефоне.</div>
+    <div class="hint" id="dlHint" hidden>Файл сохранится в «Загрузки» телефона — таблица с ценой, доставкой, растаможкой и себестоимостью по каждому отмеченному товару.</div>
+  </section>
+
+  <footer>
+    Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.<br>
+    Курсы и тарифы сохраняются автоматически. Работает без интернета — добавьте страницу на домашний экран.
+    <span id="syncLine"></span>
+  </footer>
+
+  <div class="bar">
+    <div>
+      <div class="k">Себестоимость</div>
+      <div class="usd" id="barUsd">$0,00</div>
+    </div>
+    <div class="big" id="barUzs">0 сум</div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var F = ['name','priceCny','perBox','cbm','weight','rateCny','freight','customsUnit','customsKg','rateUzs','extraUzs'];
+  var el = {};
+  F.forEach(function (id) { el[id] = document.getElementById(id); });
+
+  var mode = 'unit';
+  var photoData = '';
+
+  var KEY_CUR = 'sebes.current.v1';
+  var KEY_LIST = 'sebes.items.v1';
+
+  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+
+  function num(v) {
+    var n = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.'));
+    return isFinite(n) ? n : 0;
+  }
+  function usd(n) { return '$' + n.toFixed(2).replace('.', ','); }
+  function uzs(n) { return Math.round(n).toLocaleString('ru-RU').replace(/,/g, ' ') + ' сум'; }
+
+  function calcFrom(o) {
+    var perBox = num(o.perBox);
+    var rateCny = num(o.rateCny);
+
+    var goods = rateCny > 0 ? num(o.priceCny) / rateCny : 0;
+    var freight = perBox > 0 ? num(o.cbm) * num(o.freight) / perBox : 0;
+    var customs = o.mode === 'kg'
+      ? (perBox > 0 ? num(o.weight) * num(o.customsKg) / perBox : 0)
+      : num(o.customsUnit);
+
+    var extra = num(o.extraUzs);
+    var total = goods + freight + customs;
+    var sum = total * num(o.rateUzs) + extra;
+
+    return { goods: goods, freight: freight, customs: customs, extra: extra, total: total, sum: sum, perBox: perBox };
+  }
+
+  function calc() { return calcFrom(snapshot()); }
+
+  function render() {
+    var r = calc();
+    document.getElementById('oGoods').textContent = usd(r.goods);
+    document.getElementById('oLogi').textContent = usd(r.freight + r.customs);
+    document.getElementById('oFreight').textContent = usd(r.freight);
+    document.getElementById('oCustoms').textContent = usd(r.customs);
+    document.getElementById('oExtra').textContent = r.extra ? uzs(r.extra) : '—';
+    document.getElementById('oUsd').textContent = usd(r.total);
+    document.getElementById('oBox').textContent = r.perBox > 0
+      ? 'Коробка целиком: ' + usd(r.total * r.perBox) + ' · ' + uzs(r.sum * r.perBox)
+      : 'Укажите количество в коробке';
+    document.getElementById('barUsd').textContent = usd(r.total);
+    document.getElementById('barUzs').textContent = uzs(r.sum);
+    store(KEY_CUR, JSON.stringify(snapshot()));
+  }
+
+  function snapshot() {
+    var o = { mode: mode, photo: photoData };
+    F.forEach(function (id) { o[id] = el[id].value; });
+    return o;
+  }
+
+  function apply(o) {
+    if (!o) return;
+    F.forEach(function (id) { if (typeof o[id] === 'string') el[id].value = o[id]; });
+    setMode(o.mode === 'kg' ? 'kg' : 'unit');
+    setPhoto(o.photo || '');
+    render();
+  }
+
+  function setMode(m) {
+    mode = m;
+    document.getElementById('wrapUnit').hidden = (m !== 'unit');
+    document.getElementById('wrapKg').hidden = (m !== 'kg');
+    [].forEach.call(document.querySelectorAll('#seg button'), function (b) {
+      b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false');
+    });
+  }
+
+  function setPhoto(data) {
+    photoData = data || '';
+    var t = document.getElementById('thumb');
+    if (photoData) {
+      t.style.backgroundImage = 'url(' + photoData + ')';
+      t.textContent = '';
+      t.classList.add('has');
+    } else {
+      t.style.backgroundImage = '';
+      t.innerHTML = 'Фото<br>товара';
+      t.classList.remove('has');
+    }
+  }
+
+  /* ---- ввод ---- */
+  F.forEach(function (id) {
+    el[id].addEventListener('input', render);
+  });
+
+  document.getElementById('seg').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (!b) return;
+    setMode(b.dataset.mode);
+    render();
+  });
+
+  /* ---- фото: сжимаем до 320 px ---- */
+  document.getElementById('photo').addEventListener('change', function (e) {
+    var f = e.target.files && e.target.files[0];
+    if (!f) return;
+    var fr = new FileReader();
+    fr.onload = function () {
+      var img = new Image();
+      img.onload = function () {
+        var s = 320 / Math.max(img.width, img.height, 1);
+        s = s > 1 ? 1 : s;
+        var c = document.createElement('canvas');
+        c.width = Math.round(img.width * s);
+        c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        setPhoto(c.toDataURL('image/jpeg', 0.72));
+        render();
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(f);
+    e.target.value = '';
+  });
+
+  /* ---- сохранённые товары ---- */
+  var mem = null;   /* запасная память сеанса, если localStorage недоступен */
+  function items() {
+    if (mem) return mem;
+    try { return JSON.parse(load(KEY_LIST) || '[]'); } catch (e) { return []; }
+  }
+  function saveItems(a) { mem = a; store(KEY_LIST, JSON.stringify(a)); }
+
+  function drawList() {
+    var a = items();
+    var ul = document.getElementById('list');
+    ul.innerHTML = '';
+    document.getElementById('empty').hidden = a.length > 0;
+    document.getElementById('listhead').hidden = a.length === 0;
+    document.getElementById('dlHint').hidden = a.length === 0;
+    a.forEach(function (it, i) {
+      var li = document.createElement('li');
+
+      var cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.dataset.index = i;
+      cb.setAttribute('aria-label', 'Выбрать «' + (it.name || 'товар') + '» для скачивания');
+      cb.addEventListener('change', updateDownloadState);
+      li.appendChild(cb);
+
+      if (it.photo) {
+        var im = document.createElement('img');
+        im.src = it.photo;
+        im.alt = '';
+        li.appendChild(im);
+      }
+
+      var nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = it.name || 'Без названия';
+      li.appendChild(nm);
+
+      var pr = document.createElement('span');
+      pr.className = 'pr';
+      pr.textContent = it.sumText || '';
+      li.appendChild(pr);
+
+      var open = document.createElement('button');
+      open.type = 'button';
+      open.textContent = 'Открыть';
+      open.style.fontSize = '13px';
+      open.addEventListener('click', function () {
+        apply(it);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      li.appendChild(open);
+
+      var del = document.createElement('button');
+      del.type = 'button';
+      del.textContent = '✕';
+      del.title = 'Удалить';
+      del.addEventListener('click', function () {
+        var b = items();
+        b.splice(i, 1);
+        saveItems(b);
+        drawList();
+      });
+      li.appendChild(del);
+
+      ul.appendChild(li);
+    });
+    updateDownloadState();
+  }
+
+  function updateDownloadState() {
+    var boxes = [].slice.call(document.querySelectorAll('#list input[type="checkbox"]'));
+    var checked = boxes.filter(function (b) { return b.checked; });
+    document.getElementById('pickCount').textContent = checked.length;
+    document.getElementById('download').disabled = checked.length === 0;
+
+    var pickAll = document.getElementById('pickAll');
+    pickAll.checked = boxes.length > 0 && checked.length === boxes.length;
+    pickAll.indeterminate = checked.length > 0 && checked.length < boxes.length;
+  }
+
+  document.getElementById('pickAll').addEventListener('change', function (e) {
+    var val = e.target.checked;
+    [].forEach.call(document.querySelectorAll('#list input[type="checkbox"]'), function (b) { b.checked = val; });
+    updateDownloadState();
+  });
+
+  function csvCell(v) {
+    var s = String(v == null ? '' : v);
+    if (/[";\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+    return s;
+  }
+
+  function downloadCsv(list) {
+    var head = ['Товар', 'Цена ¥/шт', 'Кол-во в коробке', 'СВМ м³', 'Вес кг',
+      'Курс ¥/$', 'Доставка $/м³', 'Растаможка', 'Курс сум/$', 'Доп. расходы сум/шт',
+      'Себестоимость $/шт', 'Себестоимость сум/шт'];
+    var rows = [head];
+    list.forEach(function (it) {
+      var r = calcFrom(it);
+      var customsText = it.mode === 'kg'
+        ? (it.customsKg || '0') + ' $/кг'
+        : (it.customsUnit || '0') + ' $/шт';
+      rows.push([
+        it.name || 'Без названия',
+        it.priceCny || '', it.perBox || '', it.cbm || '', it.weight || '',
+        it.rateCny || '', it.freight || '', customsText, it.rateUzs || '', it.extraUzs || '0',
+        r.total.toFixed(2).replace('.', ','),
+        String(Math.round(r.sum))
+      ]);
+    });
+    var csv = rows.map(function (row) { return row.map(csvCell).join(';'); }).join('\r\n');
+    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement('a');
+    link.href = url;
+    link.download = 'sebestoimost_' + new Date().toISOString().slice(0, 10) + '.csv';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+  }
+
+  document.getElementById('download').addEventListener('click', function () {
+    var a = items();
+    var picked = [];
+    [].forEach.call(document.querySelectorAll('#list input[type="checkbox"]'), function (b) {
+      if (b.checked) picked.push(a[+b.dataset.index]);
+    });
+    if (picked.length) downloadCsv(picked);
+  });
+
+  document.getElementById('save').addEventListener('click', function () {
+    var o = snapshot();
+    o.name = (el.name.value || '').trim() || 'Без названия';
+    o.sumText = uzs(calc().sum);
+    var a = items();
+    var idx = -1;
+    a.forEach(function (x, i) { if (x.name === o.name) idx = i; });
+    if (idx >= 0) a[idx] = o; else a.unshift(o);
+    saveItems(a);
+    drawList();
+    sendToServer(o);
+  });
+
+  document.getElementById('reset').addEventListener('click', function () {
+    el.name.value = '';
+    el.priceCny.value = '';
+    el.perBox.value = '';
+    el.cbm.value = '';
+    el.weight.value = '';
+    el.extraUzs.value = '0';
+    setPhoto('');
+    render();
+  });
+
+  /* ---- отправка на сервер ----
+     Расчёт всегда сначала ложится в телефон, потом уходит на сервер.
+     Нет связи — копится в очереди и досылается при следующем открытии. */
+
+  var KEY_DEV = 'sebes.device.v1';
+  var KEY_QUEUE = 'sebes.queue.v1';
+
+  function deviceId() {
+    var id = load(KEY_DEV);
+    if (!id) {
+      id = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : 'd-' + Math.random().toString(36).slice(2) + '-' + (+new Date()).toString(36);
+      store(KEY_DEV, id);
+    }
+    return id;
+  }
+
+  function queue() {
+    try { return JSON.parse(load(KEY_QUEUE) || '[]'); } catch (e) { return []; }
+  }
+  function setQueue(a) { store(KEY_QUEUE, JSON.stringify(a.slice(-100))); }
+
+  function syncNote(text) {
+    var s = document.getElementById('syncLine');
+    if (s) s.innerHTML = text ? '<br>' + text : '';
+  }
+
+  function post(payload) {
+    return fetch('/api/calc', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).then(function (r) {
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      return r;
+    });
+  }
+
+  function sendToServer(o) {
+    var payload = { device: deviceId() };
+    F.forEach(function (id) { payload[id] = o[id]; });
+    payload.mode = o.mode;
+    payload.photo = o.photo || '';
+
+    post(payload).then(function () {
+      syncNote('Расчёт отправлен.');
+      flushQueue();
+    }).catch(function () {
+      var q = queue();
+      q.push(payload);
+      setQueue(q);
+      syncNote('Нет связи — расчёт сохранён в телефоне, отправится позже (' + q.length + ' в очереди).');
+    });
+  }
+
+  function flushQueue() {
+    var q = queue();
+    if (!q.length) return;
+    var next = q[0];
+    post(next).then(function () {
+      var rest = queue();
+      rest.shift();
+      setQueue(rest);
+      if (rest.length) flushQueue();
+      else syncNote('Всё отправлено.');
+    }).catch(function () { /* связи всё ещё нет — пробуем в следующий раз */ });
+  }
+
+  apply(JSON.parse(load(KEY_CUR) || 'null'));
+  render();
+  drawList();
+  flushQueue();
+  window.addEventListener('online', flushQueue);
+})();
+</script>
