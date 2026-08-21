@@ -379,7 +379,15 @@
   var KEY_CUR = 'sebes.current.v1';
   var KEY_LIST = 'sebes.items.v1';
 
-  function store(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  function store(k, v) {
+    try {
+      localStorage.setItem(k, v);
+      return true;
+    } catch (e) {
+      alert('Не удалось сохранить: не хватает места в памяти телефона. Расчёт остался на экране — сфотографируйте его или скачайте Excel прямо сейчас, потом удалите несколько старых товаров со старыми фото и попробуйте снова.');
+      return false;
+    }
+  }
   function load(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
 
   function num(v) {
@@ -504,7 +512,7 @@
     if (mem) return mem;
     try { return JSON.parse(load(KEY_LIST) || '[]'); } catch (e) { return []; }
   }
-  function saveItems(a) { mem = a; store(KEY_LIST, JSON.stringify(a)); }
+  function saveItems(a) { mem = a; return store(KEY_LIST, JSON.stringify(a)); }
 
   function drawList() {
     var a = items();
@@ -546,6 +554,7 @@
       open.style.fontSize = '13px';
       open.addEventListener('click', function () {
         apply(it);
+        editingIndex = i;
         window.scrollTo({ top: 0, behavior: 'smooth' });
       });
       li.appendChild(open);
@@ -813,19 +822,29 @@
     if (picked.length) downloadXlsx(picked);
   });
 
+  var editingIndex = null;   // не null — правим уже сохранённый товар, а не создаём новый
+
   document.getElementById('save').addEventListener('click', function () {
     var o = snapshot();
     o.name = (el.name.value || '').trim() || 'Без названия';
     o.sumText = uzs(calc().sum);
     var a = items();
-    var idx = -1;
-    a.forEach(function (x, i) { if (x.name === o.name) idx = i; });
-    if (idx >= 0) a[idx] = o; else a.unshift(o);
-    saveItems(a);
+
+    /* Раньше здесь искали товар с тем же названием и молча заменяли его —
+       это и привело к потере расчётов 21.08.2026, когда несколько товаров
+       сохранялись под одинаковым или пустым именем. Теперь обновление
+       возможно только через «Открыть» конкретной записи. */
+    if (editingIndex !== null && editingIndex >= 0 && editingIndex < a.length) {
+      a[editingIndex] = o;
+    } else {
+      a.unshift(o);
+    }
+    if (saveItems(a)) editingIndex = null;
     drawList();
   });
 
   document.getElementById('reset').addEventListener('click', function () {
+    editingIndex = null;
     el.name.value = '';
     el.priceCny.value = '';
     el.perBox.value = '';
