@@ -76,7 +76,7 @@
   }
 
   /* ---------- шапка ---------- */
-  header { display: flex; flex-direction: column; gap: 4px; }
+  header { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
   h1 {
     font-size: 22px;
     font-weight: 700;
@@ -84,6 +84,13 @@
     text-wrap: balance;
   }
   .sub { color: var(--ink-2); font-size: 13px; }
+  #langSelect {
+    flex: none;
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    color: var(--ink); background: var(--field);
+    border: 1px solid var(--line); border-radius: 9px;
+    padding: 7px 9px; margin-top: 2px;
+  }
 
   /* ---------- карточка-раздел ---------- */
   section {
@@ -270,36 +277,44 @@
 <div class="wrap">
 
   <header>
-    <h1>Себестоимость из Китая</h1>
-    <div class="sub">Цена в юанях → доставка по объёму → растаможка → сум за штуку</div>
+    <div>
+      <h1 id="appTitle">Себестоимость из Китая</h1>
+      <div class="sub" id="appSub">Цена в юанях → доставка по объёму → растаможка → сум за штуку</div>
+    </div>
+    <select id="langSelect" aria-label="Язык / Til / Тил / Language">
+      <option value="ru">RU</option>
+      <option value="uz">UZ</option>
+      <option value="uzc">ЎЗ</option>
+      <option value="en">EN</option>
+    </select>
   </header>
 
   <!-- 1. ТОВАР -->
   <section>
-    <div class="cap">Товар</div>
+    <div class="cap" id="capProduct">Товар</div>
     <div class="photorow">
       <label class="thumb" id="thumb" for="photo">Фото<br>товара</label>
       <input type="file" id="photo" accept="image/*">
       <label style="flex:1">
-        <span class="lb">Название</span>
+        <span class="lb" id="lblName">Название</span>
         <input type="text" class="txt" id="name" placeholder="Вакуумные пакеты 60×80">
       </label>
     </div>
     <div class="grid">
       <label>
-        <span class="lb"><b>Цена</b> ¥ за шт</span>
+        <span class="lb" id="lblPrice"><b>Цена</b> ¥ за шт</span>
         <input type="text" inputmode="decimal" id="priceCny" value="7">
       </label>
       <label>
-        <span class="lb"><b>Кол-во</b> в коробке</span>
+        <span class="lb" id="lblPerBox"><b>Кол-во</b> в коробке</span>
         <input type="text" inputmode="decimal" id="perBox" value="80">
       </label>
       <label>
-        <span class="lb"><b>СВМ</b> коробки, м³</span>
+        <span class="lb" id="lblCbm"><b>СВМ</b> коробки, м³</span>
         <input type="text" inputmode="decimal" id="cbm" value="0,24">
       </label>
       <label>
-        <span class="lb"><b>Вес</b> коробки, кг</span>
+        <span class="lb" id="lblWeight"><b>Вес</b> коробки, кг</span>
         <input type="text" inputmode="decimal" id="weight" value="">
       </label>
     </div>
@@ -307,72 +322,72 @@
 
   <!-- 2. КУРСЫ И ТАРИФЫ -->
   <section>
-    <div class="cap">Курсы и тарифы</div>
+    <div class="cap" id="capRates">Курсы и тарифы</div>
     <div class="grid">
       <label>
-        <span class="lb"><b>Курс доллара</b> ¥ за $</span>
+        <span class="lb" id="lblRateCny"><b>Курс доллара</b> ¥ за $</span>
         <input type="text" inputmode="decimal" id="rateCny" value="6,67">
       </label>
       <label>
-        <span class="lb"><b>Доставка</b> $ за м³</span>
+        <span class="lb" id="lblFreight"><b>Доставка</b> $ за м³</span>
         <input type="text" inputmode="decimal" id="freight" value="110">
-        <span class="hint">только сама перевозка, без растаможки</span>
+        <span class="hint" id="hintFreight">только сама перевозка, без растаможки</span>
       </label>
       <div class="full">
-        <span class="lb" style="display:block;margin-bottom:5px">Растаможка считается</span>
+        <span class="lb" id="lblCustomsLegend" style="display:block;margin-bottom:5px">Растаможка считается</span>
         <div class="seg" id="seg">
           <input type="radio" name="cmode" id="modeUnit" value="unit" checked>
-          <label for="modeUnit">за штуку, $</label>
+          <label for="modeUnit" id="lblModeUnit">за штуку, $</label>
           <input type="radio" name="cmode" id="modeKg" value="kg">
-          <label for="modeKg">за кг, $</label>
+          <label for="modeKg" id="lblModeKg">за кг, $</label>
         </div>
-        <span class="hint" style="display:block;margin-top:5px">Если логист уже включил растаможку в стоимость доставки «под ключ» — впишите здесь 0, иначе она посчитается дважды.</span>
+        <span class="hint" id="hintSeg" style="display:block;margin-top:5px">Если логист уже включил растаможку в стоимость доставки «под ключ» — впишите здесь 0, иначе она посчитается дважды.</span>
       </div>
       <label id="wrapUnit">
-        <span class="lb">Растаможка <b>штука</b>, $</span>
+        <span class="lb" id="lblCustomsUnit">Растаможка <b>штука</b>, $</span>
         <input type="text" inputmode="decimal" id="customsUnit" value="0,35">
       </label>
       <label id="wrapKg" hidden>
-        <span class="lb">Растаможка <b>кг</b>, $</span>
+        <span class="lb" id="lblCustomsKg">Растаможка <b>кг</b>, $</span>
         <input type="text" inputmode="decimal" id="customsKg" value="">
-        <span class="hint">нужен вес коробки</span>
+        <span class="hint" id="hintCustomsKg">нужен вес коробки</span>
       </label>
       <label>
-        <span class="lb"><b>Курс сумм</b> за $</span>
+        <span class="lb" id="lblRateUzs"><b>Курс сумм</b> за $</span>
         <input type="text" inputmode="decimal" id="rateUzs" value="12000">
       </label>
       <label>
-        <span class="lb">Доп. расходы, сум/шт</span>
+        <span class="lb" id="lblExtra">Доп. расходы, сум/шт</span>
         <input type="text" inputmode="decimal" id="extraUzs" value="0">
-        <span class="hint">упаковка, доставка до склада</span>
+        <span class="hint" id="hintExtra">упаковка, доставка до склада</span>
       </label>
     </div>
   </section>
 
   <!-- 3. РАСЧЁТ -->
   <section>
-    <div class="cap">Расчёт на 1 штуку</div>
+    <div class="cap" id="capCalc">Расчёт на 1 штуку</div>
     <div class="rows">
-      <div class="row"><span class="k">Цена товара 1 шт</span><span class="v" id="oGoods">—</span></div>
-      <div class="row"><span class="k">Доставка + растаможка 1 шт</span><span class="v" id="oLogi">—</span></div>
-      <div class="row sub-row"><span class="k">из них доставка по объёму</span><span class="v" id="oFreight">—</span></div>
-      <div class="row sub-row"><span class="k">из них растаможка</span><span class="v" id="oCustoms">—</span></div>
-      <div class="row"><span class="k">Доп. расходы</span><span class="v" id="oExtra">—</span></div>
-      <div class="row total"><span class="k">Себестоимость товара, $</span><span class="v" id="oUsd">—</span></div>
+      <div class="row"><span class="k" id="rkGoods">Цена товара 1 шт</span><span class="v" id="oGoods">—</span></div>
+      <div class="row"><span class="k" id="rkLogi">Доставка + растаможка 1 шт</span><span class="v" id="oLogi">—</span></div>
+      <div class="row sub-row"><span class="k" id="rkFreightSub">из них доставка по объёму</span><span class="v" id="oFreight">—</span></div>
+      <div class="row sub-row"><span class="k" id="rkCustomsSub">из них растаможка</span><span class="v" id="oCustoms">—</span></div>
+      <div class="row"><span class="k" id="rkExtra">Доп. расходы</span><span class="v" id="oExtra">—</span></div>
+      <div class="row total"><span class="k" id="rkTotal">Себестоимость товара, $</span><span class="v" id="oUsd">—</span></div>
     </div>
     <div class="perbox" id="oBox">—</div>
   </section>
 
   <!-- 4. СОХРАНЁННЫЕ -->
   <section>
-    <div class="cap">Мои расчёты</div>
+    <div class="cap" id="capSaved">Мои расчёты</div>
     <div class="btns">
       <button type="button" class="act primary" id="save">Сохранить товар</button>
       <button type="button" class="act" id="reset">Очистить поля</button>
     </div>
     <div class="listhead" id="listhead" hidden>
-      <label class="allpick"><input type="checkbox" id="pickAll"> Выбрать все</label>
-      <button type="button" class="act" id="download" disabled>Скачать Excel (<span id="pickCount">0</span>)</button>
+      <label class="allpick"><input type="checkbox" id="pickAll"> <span id="lblPickAll">Выбрать все</span></label>
+      <button type="button" class="act" id="download" disabled><span id="downloadLabel">Скачать Excel</span> (<span id="pickCount">0</span>)</button>
     </div>
     <ul class="saved" id="list"></ul>
     <div class="empty" id="empty">Пока пусто. Заполните поля и нажмите «Сохранить товар» — расчёт останется в телефоне.</div>
@@ -381,33 +396,19 @@
 
   <footer>
     <details class="help">
-      <summary>❓ Как пользоваться</summary>
-      <ol>
-        <li>Впишите цифры в поля — остальное посчитается само, ничего умножать вручную не нужно.</li>
-        <li><b>Доставка бывает двух видов — тут легко ошибиться:</b><br>
-          🔹 Если у логиста <b>всё включено одной ценой</b> («под ключ» — доставка + растаможка вместе за м³) — в поле <b>«Растаможка»</b> впишите <b>0</b>. Иначе растаможка посчитается два раза, и цена получится завышенной.<br>
-          🔹 Если доставка и растаможка <b>отдельные суммы</b> — впишите доставку за м³ в своё поле, а настоящую растаможку (за штуку или за кг) — в поле «Растаможка». Калькулятор сам сложит их вместе.</li>
-        <li>Внизу экрана сразу видна готовая цена в сумах.</li>
-        <li>Нажмите <b>«Сохранить товар»</b>, чтобы он не потерялся.</li>
-        <li>Хотите посчитать ещё один товар? Сотрите название, впишите новые цифры и снова нажмите <b>«Сохранить товар»</b> — старый расчёт при этом никуда не денется.</li>
-        <li>Чтобы поправить уже сохранённый товар — нажмите <b>«Открыть»</b> у него в списке, измените цифры и снова «Сохранить товар».</li>
-        <li>Чтобы отправить товары себе — поставьте галочки в списке и нажмите <b>«Скачать Excel»</b>: придёт файл с ценами и фото.</li>
-        <li>Чтобы открывать одним нажатием, как обычное приложение — добавьте страницу на главный экран:<br>
-          Android (Chrome): значок ⋮ в углу → «Добавить на главный экран».<br>
-          iPhone (Safari): значок «Поделиться» → «На экран Домой».</li>
-        <li>Что-то не работает или непонятно — жмите «Сообщить о проблеме» ниже, это сразу откроет чат.</li>
-      </ol>
+      <summary id="helpSummary">❓ Как пользоваться</summary>
+      <ol id="helpList"></ol>
     </details>
 
-    Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.<br>
-    Курсы и тарифы сохраняются автоматически. Работает без интернета.<br>
-    <b>Версия от 21.08.2026</b><br>
-    <a class="feedback" id="feedback" href="#" target="_blank" rel="noopener">✉️ Сообщить о проблеме</a>
+    <span id="formulaLine">Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.</span><br>
+    <span id="footerNote2">Курсы и тарифы сохраняются автоматически. Работает без интернета.</span><br>
+    <b><span id="versionLabel">Версия от 21.08.2026</span></b><br>
+    <a class="feedback" id="feedback" href="#" target="_blank" rel="noopener"><span id="feedbackText">✉️ Сообщить о проблеме</span></a>
   </footer>
 
   <div class="bar">
     <div>
-      <div class="k">Себестоимость</div>
+      <div class="k" id="barLabel">Себестоимость</div>
       <div class="usd" id="barUsd">$0,00</div>
     </div>
     <div class="big" id="barUzs">0 сум</div>
@@ -421,6 +422,371 @@
   var el = {};
   F.forEach(function (id) { el[id] = document.getElementById(id); });
 
+  /* ---- переводы: ru / uz (латиница) / uzc (кириллица) / en ---- */
+  var I18N = {
+    ru: {
+      title: "Себестоимость из Китая",
+      sub: "Цена в юанях → доставка по объёму → растаможка → сум за штуку",
+      capProduct: "Товар",
+      photoPlaceholder: "Фото<br>товара",
+      lblName: "Название",
+      lblPrice: "<b>Цена</b> ¥ за шт",
+      lblPerBox: "<b>Кол-во</b> в коробке",
+      lblCbm: "<b>СВМ</b> коробки, м³",
+      lblWeight: "<b>Вес</b> коробки, кг",
+      capRates: "Курсы и тарифы",
+      lblRateCny: "<b>Курс доллара</b> ¥ за $",
+      lblFreight: "<b>Доставка</b> $ за м³",
+      hintFreight: "только сама перевозка, без растаможки",
+      lblCustomsLegend: "Растаможка считается",
+      lblModeUnit: "за штуку, $",
+      lblModeKg: "за кг, $",
+      hintSeg: "Если логист уже включил растаможку в стоимость доставки «под ключ» — впишите здесь 0, иначе она посчитается дважды.",
+      lblCustomsUnit: "Растаможка <b>штука</b>, $",
+      lblCustomsKg: "Растаможка <b>кг</b>, $",
+      hintCustomsKg: "нужен вес коробки",
+      lblRateUzs: "<b>Курс сумм</b> за $",
+      lblExtra: "Доп. расходы, сум/шт",
+      hintExtra: "упаковка, доставка до склада",
+      capCalc: "Расчёт на 1 штуку",
+      rkGoods: "Цена товара 1 шт",
+      rkLogi: "Доставка + растаможка 1 шт",
+      rkFreightSub: "из них доставка по объёму",
+      rkCustomsSub: "из них растаможка",
+      rkExtra: "Доп. расходы",
+      rkTotal: "Себестоимость товара, $",
+      barLabel: "Себестоимость",
+      boxWhole: "Коробка целиком: ",
+      boxNeedQty: "Укажите количество в коробке",
+      capSaved: "Мои расчёты",
+      btnSave: "Сохранить товар",
+      btnReset: "Очистить поля",
+      lblPickAll: "Выбрать все",
+      downloadLabel: "Скачать Excel",
+      emptyState: "Пока пусто. Заполните поля и нажмите «Сохранить товар» — расчёт останется в телефоне.",
+      dlHint: "Сохранится файл Excel: таблица с ценой, доставкой, растаможкой и себестоимостью, фото товара — прямо в ячейках.",
+      openBtn: "Открыть",
+      deleteTitle: "Удалить",
+      pickAriaPrefix: "Выбрать «",
+      pickAriaSuffix: "» для скачивания",
+      noName: "Без названия",
+      storageFullAlert: "Не удалось сохранить: не хватает места в памяти телефона. Расчёт остался на экране — сфотографируйте его или скачайте Excel прямо сейчас, потом удалите несколько старых товаров со старыми фото и попробуйте снова.",
+      helpSummary: "❓ Как пользоваться",
+      helpItems: [
+        "Впишите цифры в поля — остальное посчитается само, ничего умножать вручную не нужно.",
+        "<b>Доставка бывает двух видов — тут легко ошибиться:</b><br>🔹 Если у логиста <b>всё включено одной ценой</b> («под ключ» — доставка + растаможка вместе за м³) — в поле <b>«Растаможка»</b> впишите <b>0</b>. Иначе растаможка посчитается два раза, и цена получится завышенной.<br>🔹 Если доставка и растаможка <b>отдельные суммы</b> — впишите доставку за м³ в своё поле, а настоящую растаможку (за штуку или за кг) — в поле «Растаможка». Калькулятор сам сложит их вместе.",
+        "Внизу экрана сразу видна готовая цена в сумах.",
+        "Нажмите <b>«Сохранить товар»</b>, чтобы он не потерялся.",
+        "Хотите посчитать ещё один товар? Сотрите название, впишите новые цифры и снова нажмите <b>«Сохранить товар»</b> — старый расчёт при этом никуда не денется.",
+        "Чтобы поправить уже сохранённый товар — нажмите <b>«Открыть»</b> у него в списке, измените цифры и снова «Сохранить товар».",
+        "Чтобы отправить товары себе — поставьте галочки в списке и нажмите <b>«Скачать Excel»</b>: придёт файл с ценами и фото.",
+        "Чтобы открывать одним нажатием, как обычное приложение — добавьте страницу на главный экран:<br>Android (Chrome): значок ⋮ в углу → «Добавить на главный экран».<br>iPhone (Safari): значок «Поделиться» → «На экран Домой».",
+        "Что-то не работает или непонятно — жмите «Сообщить о проблеме» ниже, это сразу откроет чат."
+      ],
+      formulaLine: "Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.",
+      footerNote2: "Курсы и тарифы сохраняются автоматически. Работает без интернета.",
+      versionPrefix: "Версия от",
+      feedbackText: "✉️ Сообщить о проблеме",
+      feedbackMsgPrefix: "Проблема в калькуляторе себестоимости (версия от 21.08.2026): ",
+      currencyWord: "сум",
+      xlsxHead: ["Фото", "Товар", "Цена ¥/шт", "Кол-во в коробке", "СВМ м³", "Вес кг", "Курс ¥/$", "Доставка $/м³", "Растаможка", "Курс сум/$", "Доп. расходы сум/шт", "Себестоимость $/шт", "Себестоимость сум/шт"],
+      xlsxSheetName: "Себестоимость",
+      customsPerKg: " $/кг",
+      customsPerUnit: " $/шт"
+    },
+    uz: {
+      title: "Xitoydan tan narxi",
+      sub: "Narx yuanda → hajm bo'yicha yetkazish → bojxona → so'mda tan narx",
+      capProduct: "Mahsulot",
+      photoPlaceholder: "Mahsulot<br>surati",
+      lblName: "Nomi",
+      lblPrice: "<b>Narxi</b> ¥/dona",
+      lblPerBox: "<b>Soni</b> qutida",
+      lblCbm: "<b>Hajmi</b>, m³",
+      lblWeight: "<b>Og'irligi</b>, kg",
+      capRates: "Kurslar va tariflar",
+      lblRateCny: "<b>Dollar kursi</b> ¥/$",
+      lblFreight: "<b>Yetkazish</b> $/m³",
+      hintFreight: "faqat tashish, bojxonasiz",
+      lblCustomsLegend: "Bojxona qanday hisoblanadi",
+      lblModeUnit: "dona uchun, $",
+      lblModeKg: "kg uchun, $",
+      hintSeg: "Agar logist bojxonani «kalit topshirish» yetkazish narxiga qo'shib qo'ygan bo'lsa — bu yerga 0 yozing, aks holda bojxona ikki marta hisoblanadi.",
+      lblCustomsUnit: "Bojxona <b>dona</b>, $",
+      lblCustomsKg: "Bojxona <b>kg</b>, $",
+      hintCustomsKg: "quti og'irligi kerak",
+      lblRateUzs: "<b>So'm kursi</b>, $",
+      lblExtra: "Qo'shimcha xarajat, so'm/dona",
+      hintExtra: "qadoqlash, omborgacha yetkazish",
+      capCalc: "1 dona uchun hisob-kitob",
+      rkGoods: "1 dona narxi",
+      rkLogi: "Yetkazish + bojxona, 1 dona",
+      rkFreightSub: "shundan — hajm bo'yicha yetkazish",
+      rkCustomsSub: "shundan — bojxona",
+      rkExtra: "Qo'shimcha xarajat",
+      rkTotal: "Tan narxi, $",
+      barLabel: "Tan narxi",
+      boxWhole: "Butun quti: ",
+      boxNeedQty: "Qutidagi sonini kiriting",
+      capSaved: "Mening hisoblarim",
+      btnSave: "Mahsulotni saqlash",
+      btnReset: "Maydonlarni tozalash",
+      lblPickAll: "Hammasini tanlash",
+      downloadLabel: "Excel yuklab olish",
+      emptyState: "Hozircha bo'sh. Maydonlarni to'ldiring va «Mahsulotni saqlash»ni bosing — hisob telefonda qoladi.",
+      dlHint: "Excel fayli yuklanadi: narx, yetkazish, bojxona va tan narx jadvali, mahsulot surati — katakchalarning o'zida.",
+      openBtn: "Ochish",
+      deleteTitle: "O'chirish",
+      pickAriaPrefix: "Yuklab olish uchun tanlang: «",
+      pickAriaSuffix: "»",
+      noName: "Nomsiz",
+      storageFullAlert: "Saqlab bo'lmadi: telefon xotirasida joy yetishmayapti. Hisob ekranda qoldi — uni suratga oling yoki hozir Excel qilib yuklab oling, so'ng eski suratli mahsulotlarni o'chirib qayta urinib ko'ring.",
+      helpSummary: "❓ Qanday foydalanish kerak",
+      helpItems: [
+        "Raqamlarni maydonlarga yozing — qolganini o'zi hisoblaydi, qo'lda ko'paytirish shart emas.",
+        "<b>Yetkazish ikki xil bo'ladi — shu yerda adashish oson:</b><br>🔹 Agar logistda hammasi bitta narxga kiritilgan bo'lsa («kalit topshirish» — yetkazish + bojxona birga, m³ uchun) — <b>«Bojxona»</b> maydoniga <b>0</b> yozing. Aks holda bojxona ikki marta hisoblanib, narx oshib ketadi.<br>🔹 Agar yetkazish va bojxona <b>alohida summalar</b> bo'lsa — yetkazishni m³ uchun o'z maydoniga, haqiqiy bojxonani (dona yoki kg uchun) — «Bojxona» maydoniga yozing. Kalkulyator ularni o'zi qo'shadi.",
+        "Ekranning pastida darhol tayyor narx so'mda ko'rinadi.",
+        "<b>«Mahsulotni saqlash»</b>ni bosing — yo'qolib ketmasligi uchun.",
+        "Yana bir mahsulotni hisoblamoqchimisiz? Nomini o'chiring, yangi raqamlarni yozing va yana <b>«Mahsulotni saqlash»</b>ni bosing — eski hisob joyida qoladi.",
+        "Saqlangan mahsulotni tuzatish uchun — ro'yxatda uning yonidagi <b>«Ochish»</b>ni bosing, raqamlarni o'zgartiring va yana «Mahsulotni saqlash».",
+        "Mahsulotlarni o'zingizga yuborish uchun — ro'yxatda katakchalarni belgilang va <b>«Excel yuklab olish»</b>ni bosing: narxlar va suratlar bilan fayl keladi.",
+        "Bir bosishda, oddiy ilova kabi ochish uchun — sahifani bosh ekranga qo'shing:<br>Android (Chrome): burchakdagi ⋮ belgisi → «Bosh ekranga qo'shish».<br>iPhone (Safari): «Ulashish» belgisi → «Bosh ekranga qo'shish».",
+        "Nimadir ishlamayaptimi yoki tushunarsizmi — pastdagi «Muammo haqida yozish»ni bosing, bu darhol chatni ochadi."
+      ],
+      formulaLine: "Tan narx = ¥ ÷ dollar kursi &nbsp;+&nbsp; hajm × tarif ÷ qutidagi soni &nbsp;+&nbsp; bojxona, hammasi × so'm kursi.",
+      footerNote2: "Kurslar va tariflar avtomatik saqlanadi. Internetsiz ishlaydi.",
+      versionPrefix: "Versiya:",
+      feedbackText: "✉️ Muammo haqida yozish",
+      feedbackMsgPrefix: "Tan narx kalkulyatoridagi muammo (versiya: 21.08.2026): ",
+      currencyWord: "so'm",
+      xlsxHead: ["Surat", "Mahsulot", "Narxi ¥/dona", "Qutidagi soni", "Hajmi m³", "Og'irligi kg", "Dollar kursi ¥/$", "Yetkazish $/m³", "Bojxona", "So'm kursi/$", "Qo'shimcha xarajat so'm/dona", "Tan narx $/dona", "Tan narx so'm/dona"],
+      xlsxSheetName: "Tan narx",
+      customsPerKg: " $/kg",
+      customsPerUnit: " $/dona"
+    },
+    uzc: {
+      title: "Хитойдан тан нарх",
+      sub: "Нарх юанда → ҳажм бўйича етказиш → божхона → сўмда тан нарх",
+      capProduct: "Маҳсулот",
+      photoPlaceholder: "Маҳсулот<br>сурати",
+      lblName: "Номи",
+      lblPrice: "<b>Нархи</b> ¥/дона",
+      lblPerBox: "<b>Сони</b> қутида",
+      lblCbm: "<b>Ҳажми</b>, м³",
+      lblWeight: "<b>Оғирлиги</b>, кг",
+      capRates: "Курслар ва тарифлар",
+      lblRateCny: "<b>Доллар курси</b> ¥/$",
+      lblFreight: "<b>Етказиш</b> $/м³",
+      hintFreight: "фақат ташиш, божхонасиз",
+      lblCustomsLegend: "Божхона қандай ҳисобланади",
+      lblModeUnit: "дона учун, $",
+      lblModeKg: "кг учун, $",
+      hintSeg: "Агар логист божхонани «калит топшириш» етказиш нархига қўшиб қўйган бўлса — бу ерга 0 ёзинг, акс ҳолда божхона икки марта ҳисобланади.",
+      lblCustomsUnit: "Божхона <b>дона</b>, $",
+      lblCustomsKg: "Божхона <b>кг</b>, $",
+      hintCustomsKg: "қути оғирлиги керак",
+      lblRateUzs: "<b>Сўм курси</b>, $",
+      lblExtra: "Қўшимча харажат, сўм/дона",
+      hintExtra: "қадоқлаш, омборгача етказиш",
+      capCalc: "1 дона учун ҳисоб-китоб",
+      rkGoods: "1 дона нархи",
+      rkLogi: "Етказиш + божхона, 1 дона",
+      rkFreightSub: "шундан — ҳажм бўйича етказиш",
+      rkCustomsSub: "шундан — божхона",
+      rkExtra: "Қўшимча харажат",
+      rkTotal: "Тан нарх, $",
+      barLabel: "Тан нарх",
+      boxWhole: "Бутун қути: ",
+      boxNeedQty: "Қутидаги сонини киритинг",
+      capSaved: "Менинг ҳисобларим",
+      btnSave: "Маҳсулотни сақлаш",
+      btnReset: "Майдонларни тозалаш",
+      lblPickAll: "Ҳаммасини танлаш",
+      downloadLabel: "Excel юклаб олиш",
+      emptyState: "Ҳозирча бўш. Майдонларни тўлдиринг ва «Маҳсулотни сақлаш»ни босинг — ҳисоб телефонда қолади.",
+      dlHint: "Excel файли юкланади: нарх, етказиш, божхона ва тан нарх жадвали, маҳсулот сурати — катакчаларнинг ўзида.",
+      openBtn: "Очиш",
+      deleteTitle: "Ўчириш",
+      pickAriaPrefix: "Юклаб олиш учун танланг: «",
+      pickAriaSuffix: "»",
+      noName: "Номсиз",
+      storageFullAlert: "Сақлаб бўлмади: телефон хотирасида жой етишмаяпти. Ҳисоб экранда қолди — уни суратга олинг ёки ҳозир Excel қилиб юклаб олинг, сўнг эски суратли маҳсулотларни ўчириб қайта уриниб кўринг.",
+      helpSummary: "❓ Қандай фойдаланиш керак",
+      helpItems: [
+        "Рақамларни майдонларга ёзинг — қолганини ўзи ҳисоблайди, қўлда кўпайтириш шарт эмас.",
+        "<b>Етказиш икки хил бўлади — шу ерда адашиш осон:</b><br>🔹 Агар логистда ҳаммаси битта нархга киритилган бўлса («калит топшириш» — етказиш + божхона бирга, м³ учун) — <b>«Божхона»</b> майдонига <b>0</b> ёзинг. Акс ҳолда божхона икки марта ҳисобланиб, нарх ошиб кетади.<br>🔹 Агар етказиш ва божхона <b>алоҳида суммалар</b> бўлса — етказишни м³ учун ўз майдонига, ҳақиқий божхонани (дона ёки кг учун) — «Божхона» майдонига ёзинг. Калькулятор уларни ўзи қўшади.",
+        "Экраннинг пастида дарҳол тайёр нарх сўмда кўринади.",
+        "<b>«Маҳсулотни сақлаш»</b>ни босинг — йўқолиб кетмаслиги учун.",
+        "Яна бир маҳсулотни ҳисобламоқчимисиз? Номини ўчиринг, янги рақамларни ёзинг ва яна <b>«Маҳсулотни сақлаш»</b>ни босинг — эски ҳисоб жойида қолади.",
+        "Сақланган маҳсулотни тузатиш учун — рўйхатда унинг ёнидаги <b>«Очиш»</b>ни босинг, рақамларни ўзгартиринг ва яна «Маҳсулотни сақлаш».",
+        "Маҳсулотларни ўзингизга юбориш учун — рўйхатда катакчаларни белгиланг ва <b>«Excel юклаб олиш»</b>ни босинг: нархлар ва суратлар билан файл келади.",
+        "Бир босишда, оддий илова каби очиш учун — саҳифани бош экранга қўшинг:<br>Android (Chrome): бурчакдаги ⋮ белгиси → «Бош экранга қўшиш».<br>iPhone (Safari): «Улашиш» белгиси → «Бош экранга қўшиш».",
+        "Нимадир ишламаяптими ёки тушунарсизми — пастдаги «Муаммо ҳақида ёзиш»ни босинг, бу дарҳол чатни очади."
+      ],
+      formulaLine: "Тан нарх = ¥ ÷ доллар курси &nbsp;+&nbsp; ҳажм × тариф ÷ қутидаги сони &nbsp;+&nbsp; божхона, ҳаммаси × сўм курси.",
+      footerNote2: "Курслар ва тарифлар автоматик сақланади. Интернетсиз ишлайди.",
+      versionPrefix: "Версия:",
+      feedbackText: "✉️ Муаммо ҳақида ёзиш",
+      feedbackMsgPrefix: "Тан нарх калькуляторидаги муаммо (версия: 21.08.2026): ",
+      currencyWord: "сўм",
+      xlsxHead: ["Сурат", "Маҳсулот", "Нархи ¥/дона", "Қутидаги сони", "Ҳажми м³", "Оғирлиги кг", "Доллар курси ¥/$", "Етказиш $/м³", "Божхона", "Сўм курси/$", "Қўшимча харажат сўм/дона", "Тан нарх $/дона", "Тан нарх сўм/дона"],
+      xlsxSheetName: "Тан нарх",
+      customsPerKg: " $/кг",
+      customsPerUnit: " $/дона"
+    },
+    en: {
+      title: "Cost from China",
+      sub: "Price in yuan → freight per volume → customs → cost in UZS per unit",
+      capProduct: "Item",
+      photoPlaceholder: "Item<br>photo",
+      lblName: "Name",
+      lblPrice: "<b>Price</b> ¥/pc",
+      lblPerBox: "<b>Qty</b> per box",
+      lblCbm: "<b>Volume</b> of box, m³",
+      lblWeight: "<b>Weight</b> of box, kg",
+      capRates: "Rates & tariffs",
+      lblRateCny: "<b>USD rate</b> ¥ per $",
+      lblFreight: "<b>Freight</b> $ per m³",
+      hintFreight: "shipping only, customs not included",
+      lblCustomsLegend: "Customs is calculated",
+      lblModeUnit: "per piece, $",
+      lblModeKg: "per kg, $",
+      hintSeg: "If your freight forwarder already bundled customs into the door-to-door price — enter 0 here, otherwise customs gets counted twice.",
+      lblCustomsUnit: "Customs <b>per piece</b>, $",
+      lblCustomsKg: "Customs <b>per kg</b>, $",
+      hintCustomsKg: "box weight needed",
+      lblRateUzs: "<b>UZS rate</b> per $",
+      lblExtra: "Extra costs, UZS/pc",
+      hintExtra: "packaging, delivery to warehouse",
+      capCalc: "Cost per unit",
+      rkGoods: "Item price /pc",
+      rkLogi: "Freight + customs /pc",
+      rkFreightSub: "of which — freight by volume",
+      rkCustomsSub: "of which — customs",
+      rkExtra: "Extra costs",
+      rkTotal: "Cost price, $",
+      barLabel: "Cost price",
+      boxWhole: "Whole box: ",
+      boxNeedQty: "Enter quantity per box",
+      capSaved: "My calculations",
+      btnSave: "Save item",
+      btnReset: "Clear fields",
+      lblPickAll: "Select all",
+      downloadLabel: "Download Excel",
+      emptyState: "Nothing saved yet. Fill in the fields and tap «Save item» — it stays on your phone.",
+      dlHint: "An Excel file will download: price, freight, customs and cost price table, with the item photo right in the cells.",
+      openBtn: "Open",
+      deleteTitle: "Delete",
+      pickAriaPrefix: "Select «",
+      pickAriaSuffix: "» for download",
+      noName: "Untitled",
+      storageFullAlert: "Could not save: your phone is out of storage space. The calculation is still on screen — take a screenshot or download it as Excel right now, then delete a few old items with photos and try again.",
+      helpSummary: "❓ How to use",
+      helpItems: [
+        "Type numbers into the fields — everything else is calculated for you, no manual math needed.",
+        "<b>There are two kinds of freight — easy to mix up:</b><br>🔹 If your forwarder charges one all-in price («door-to-door», freight + customs together per m³) — enter <b>0</b> in the <b>«Customs»</b> field. Otherwise customs gets counted twice and the price comes out too high.<br>🔹 If freight and customs are <b>separate amounts</b> — enter freight per m³ in its own field, and the real customs fee (per piece or per kg) in the «Customs» field. The calculator adds them together.",
+        "The finished price in UZS is always visible at the bottom of the screen.",
+        "Tap <b>«Save item»</b> so it isn't lost.",
+        "Want to calculate another item? Clear the name, type in new numbers and tap <b>«Save item»</b> again — the previous one stays exactly as it was.",
+        "To fix an item you already saved — tap <b>«Open»</b> next to it in the list, change the numbers, and tap «Save item» again.",
+        "To send yourself the items — tick the checkboxes in the list and tap <b>«Download Excel»</b>: you'll get a file with prices and photos.",
+        "To open it in one tap, like a real app — add the page to your home screen:<br>Android (Chrome): the ⋮ icon → «Add to Home screen».<br>iPhone (Safari): the Share icon → «Add to Home Screen».",
+        "Something not working, or unclear — tap «Report a problem» below, it opens a chat right away."
+      ],
+      formulaLine: "Cost price = ¥ ÷ USD rate &nbsp;+&nbsp; volume × tariff ÷ qty per box &nbsp;+&nbsp; customs, all × UZS rate.",
+      footerNote2: "Rates and tariffs are saved automatically. Works without internet.",
+      versionPrefix: "Version:",
+      feedbackText: "✉️ Report a problem",
+      feedbackMsgPrefix: "Issue in the cost calculator (version: 2026-08-21): ",
+      currencyWord: "UZS",
+      xlsxHead: ["Photo", "Item", "Price ¥/pc", "Qty per box", "Volume m³", "Weight kg", "USD rate ¥/$", "Freight $/m³", "Customs", "UZS rate/$", "Extra costs UZS/pc", "Cost $/pc", "Cost UZS/pc"],
+      xlsxSheetName: "Cost price",
+      customsPerKg: " $/kg",
+      customsPerUnit: " $/pc"
+    }
+  };
+
+  var LANG_KEY = 'sebes.lang.v1';
+  var currentLang = 'ru';
+  try { currentLang = localStorage.getItem(LANG_KEY) || 'ru'; } catch (e) {}
+  if (!I18N[currentLang]) currentLang = 'ru';
+
+  function tr(key) { return I18N[currentLang][key]; }
+
+  function applyLang(lang) {
+    if (!I18N[lang]) lang = 'ru';
+    currentLang = lang;
+    try { localStorage.setItem(LANG_KEY, lang); } catch (e) {}
+    document.getElementById('langSelect').value = lang;
+
+    var t = I18N[lang];
+    document.title = t.title;
+    document.getElementById('appTitle').textContent = t.title;
+    document.getElementById('appSub').textContent = t.sub;
+    document.getElementById('capProduct').textContent = t.capProduct;
+    document.getElementById('lblName').textContent = t.lblName;
+    document.getElementById('lblPrice').innerHTML = t.lblPrice;
+    document.getElementById('lblPerBox').innerHTML = t.lblPerBox;
+    document.getElementById('lblCbm').innerHTML = t.lblCbm;
+    document.getElementById('lblWeight').innerHTML = t.lblWeight;
+    document.getElementById('capRates').textContent = t.capRates;
+    document.getElementById('lblRateCny').innerHTML = t.lblRateCny;
+    document.getElementById('lblFreight').innerHTML = t.lblFreight;
+    document.getElementById('hintFreight').textContent = t.hintFreight;
+    document.getElementById('lblCustomsLegend').textContent = t.lblCustomsLegend;
+    document.getElementById('lblModeUnit').textContent = t.lblModeUnit;
+    document.getElementById('lblModeKg').textContent = t.lblModeKg;
+    document.getElementById('hintSeg').textContent = t.hintSeg;
+    document.getElementById('lblCustomsUnit').innerHTML = t.lblCustomsUnit;
+    document.getElementById('lblCustomsKg').innerHTML = t.lblCustomsKg;
+    document.getElementById('hintCustomsKg').textContent = t.hintCustomsKg;
+    document.getElementById('lblRateUzs').innerHTML = t.lblRateUzs;
+    document.getElementById('lblExtra').textContent = t.lblExtra;
+    document.getElementById('hintExtra').textContent = t.hintExtra;
+    document.getElementById('capCalc').textContent = t.capCalc;
+    document.getElementById('rkGoods').textContent = t.rkGoods;
+    document.getElementById('rkLogi').textContent = t.rkLogi;
+    document.getElementById('rkFreightSub').textContent = t.rkFreightSub;
+    document.getElementById('rkCustomsSub').textContent = t.rkCustomsSub;
+    document.getElementById('rkExtra').textContent = t.rkExtra;
+    document.getElementById('rkTotal').textContent = t.rkTotal;
+    document.getElementById('barLabel').textContent = t.barLabel;
+    document.getElementById('capSaved').textContent = t.capSaved;
+    document.getElementById('save').textContent = t.btnSave;
+    document.getElementById('reset').textContent = t.btnReset;
+    document.getElementById('lblPickAll').textContent = t.lblPickAll;
+    document.getElementById('downloadLabel').textContent = t.downloadLabel;
+    document.getElementById('empty').textContent = t.emptyState;
+    document.getElementById('dlHint').textContent = t.dlHint;
+    document.getElementById('helpSummary').textContent = t.helpSummary;
+
+    var ol = document.getElementById('helpList');
+    ol.innerHTML = '';
+    t.helpItems.forEach(function (html) {
+      var li = document.createElement('li');
+      li.innerHTML = html;
+      ol.appendChild(li);
+    });
+
+    document.getElementById('formulaLine').innerHTML = t.formulaLine;
+    document.getElementById('footerNote2').textContent = t.footerNote2;
+    document.getElementById('versionLabel').textContent = t.versionPrefix + ' 21.08.2026';
+    document.getElementById('feedbackText').textContent = t.feedbackText;
+    document.getElementById('feedback').href = 'https://t.me/Rashiduzt?text=' + encodeURIComponent(t.feedbackMsgPrefix);
+
+    if (!photoData) {
+      var thumb = document.getElementById('thumb');
+      if (thumb) thumb.innerHTML = t.photoPlaceholder;
+    }
+
+    render();
+    drawList();
+  }
+
+  document.getElementById('langSelect').addEventListener('change', function (e) {
+    applyLang(e.target.value);
+  });
+
   var mode = 'unit';
   var photoData = '';
 
@@ -432,7 +798,7 @@
       localStorage.setItem(k, v);
       return true;
     } catch (e) {
-      alert('Не удалось сохранить: не хватает места в памяти телефона. Расчёт остался на экране — сфотографируйте его или скачайте Excel прямо сейчас, потом удалите несколько старых товаров со старыми фото и попробуйте снова.');
+      alert(tr('storageFullAlert'));
       return false;
     }
   }
@@ -443,7 +809,7 @@
     return isFinite(n) ? n : 0;
   }
   function usd(n) { return '$' + n.toFixed(2).replace('.', ','); }
-  function uzs(n) { return Math.round(n).toLocaleString('ru-RU').replace(/,/g, ' ') + ' сум'; }
+  function uzs(n) { return Math.round(n).toLocaleString('ru-RU').replace(/,/g, ' ') + ' ' + tr('currencyWord'); }
 
   function calcFrom(o) {
     var perBox = num(o.perBox);
@@ -473,8 +839,8 @@
     document.getElementById('oExtra').textContent = r.extra ? uzs(r.extra) : '—';
     document.getElementById('oUsd').textContent = usd(r.total);
     document.getElementById('oBox').textContent = r.perBox > 0
-      ? 'Коробка целиком: ' + usd(r.total * r.perBox) + ' · ' + uzs(r.sum * r.perBox)
-      : 'Укажите количество в коробке';
+      ? tr('boxWhole') + usd(r.total * r.perBox) + ' · ' + uzs(r.sum * r.perBox)
+      : tr('boxNeedQty');
     document.getElementById('barUsd').textContent = usd(r.total);
     document.getElementById('barUzs').textContent = uzs(r.sum);
     store(KEY_CUR, JSON.stringify(snapshot()));
@@ -511,7 +877,7 @@
       t.classList.add('has');
     } else {
       t.style.backgroundImage = '';
-      t.innerHTML = 'Фото<br>товара';
+      t.innerHTML = tr('photoPlaceholder');
       t.classList.remove('has');
     }
   }
@@ -575,7 +941,7 @@
       var cb = document.createElement('input');
       cb.type = 'checkbox';
       cb.dataset.index = i;
-      cb.setAttribute('aria-label', 'Выбрать «' + (it.name || 'товар') + '» для скачивания');
+      cb.setAttribute('aria-label', tr('pickAriaPrefix') + (it.name || tr('noName')) + tr('pickAriaSuffix'));
       cb.addEventListener('change', updateDownloadState);
       li.appendChild(cb);
 
@@ -588,7 +954,7 @@
 
       var nm = document.createElement('span');
       nm.className = 'nm';
-      nm.textContent = it.name || 'Без названия';
+      nm.textContent = it.name || tr('noName');
       li.appendChild(nm);
 
       var pr = document.createElement('span');
@@ -598,7 +964,7 @@
 
       var open = document.createElement('button');
       open.type = 'button';
-      open.textContent = 'Открыть';
+      open.textContent = tr('openBtn');
       open.style.fontSize = '13px';
       open.addEventListener('click', function () {
         apply(it);
@@ -610,7 +976,7 @@
       var del = document.createElement('button');
       del.type = 'button';
       del.textContent = '✕';
-      del.title = 'Удалить';
+      del.title = tr('deleteTitle');
       del.addEventListener('click', function () {
         var b = items();
         b.splice(i, 1);
@@ -729,20 +1095,18 @@
   var PHOTO_PX = 56;      // размер фото в ячейке
 
   function downloadXlsx(list) {
-    var head = ['Фото', 'Товар', 'Цена ¥/шт', 'Кол-во в коробке', 'СВМ м³', 'Вес кг',
-      'Курс ¥/$', 'Доставка $/м³', 'Растаможка', 'Курс сум/$', 'Доп. расходы сум/шт',
-      'Себестоимость $/шт', 'Себестоимость сум/шт'];
+    var head = tr('xlsxHead');
 
     var rows = [], media = [], anchors = [];
 
     list.forEach(function (it, idx) {
       var r = calcFrom(it);
       var customs = it.mode === 'kg'
-        ? (it.customsKg || '0') + ' $/кг'
-        : (it.customsUnit || '0') + ' $/шт';
+        ? (it.customsKg || '0') + tr('customsPerKg')
+        : (it.customsUnit || '0') + tr('customsPerUnit');
 
       rows.push([
-        '', it.name || 'Без названия',
+        '', it.name || tr('noName'),
         it.priceCny || '', it.perBox || '', it.cbm || '', it.weight || '',
         it.rateCny || '', it.freight || '', customs, it.rateUzs || '', it.extraUzs || '0',
         r.total.toFixed(2).replace('.', ','),
@@ -792,7 +1156,7 @@
           '<xdr:row>' + a.row + '</xdr:row><xdr:rowOff>' + (3 * PX) + '</xdr:rowOff></xdr:from>' +
           '<xdr:ext cx="' + (PHOTO_PX * PX) + '" cy="' + (PHOTO_PX * PX) + '"/>' +
           '<xdr:pic>' +
-            '<xdr:nvPicPr><xdr:cNvPr id="' + (i + 2) + '" name="Фото ' + (i + 1) + '"/>' +
+            '<xdr:nvPicPr><xdr:cNvPr id="' + (i + 2) + '" name="' + tr('xlsxHead')[0] + ' ' + (i + 1) + '"/>' +
             '<xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>' +
             '<xdr:blipFill><a:blip r:embed="rId' + a.id + '"/>' +
             '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
@@ -838,7 +1202,7 @@
     var files = [
       { name: '[Content_Types].xml', data: utf8(types) },
       { name: '_rels/.rels', data: utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>') },
-      { name: 'xl/workbook.xml', data: utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Себестоимость" sheetId="1" r:id="rId1"/></sheets></workbook>') },
+      { name: 'xl/workbook.xml', data: utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="' + xmlEsc(tr('xlsxSheetName')) + '" sheetId="1" r:id="rId1"/></sheets></workbook>') },
       { name: 'xl/_rels/workbook.xml.rels', data: utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>') },
       { name: 'xl/styles.xml', data: utf8(styles) },
       { name: 'xl/worksheets/sheet1.xml', data: utf8(sheet) },
@@ -874,7 +1238,7 @@
 
   document.getElementById('save').addEventListener('click', function () {
     var o = snapshot();
-    o.name = (el.name.value || '').trim() || 'Без названия';
+    o.name = (el.name.value || '').trim() || tr('noName');
     o.sumText = uzs(calc().sum);
     var a = items();
 
@@ -904,16 +1268,7 @@
   });
 
   apply(JSON.parse(load(KEY_CUR) || 'null'));
-  render();
-  drawList();
-
-  /* обратная связь: открывает чат в Telegram с заготовленным сообщением,
-     чтобы было понятно, из какой версии страницы пишет человек */
-  (function () {
-    var msg = 'Проблема в калькуляторе себестоимости (версия от 21.08.2026): ';
-    document.getElementById('feedback').href =
-      'https://t.me/Rashiduzt?text=' + encodeURIComponent(msg);
-  })();
+  applyLang(currentLang);   /* переводит текст и заодно вызывает render() + drawList() */
 
   /* офлайн-режим: работает только по https, для локального файла молча пропускаем */
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
