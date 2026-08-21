@@ -1,6 +1,13 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Себестоимость из Китая</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<link rel="icon" href="./icon-192.png">
+<meta name="theme-color" content="#BC5127">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Себестоимость">
 
 <style>
   :root {
@@ -337,18 +344,17 @@
     </div>
     <div class="listhead" id="listhead" hidden>
       <label class="allpick"><input type="checkbox" id="pickAll"> Выбрать все</label>
-      <button type="button" class="act" id="download" disabled>Скачать (<span id="pickCount">0</span>)</button>
+      <button type="button" class="act" id="download" disabled>Скачать Excel (<span id="pickCount">0</span>)</button>
     </div>
     <ul class="saved" id="list"></ul>
     <div class="empty" id="empty">Пока пусто. Заполните поля и нажмите «Сохранить товар» — расчёт останется в телефоне.</div>
-    <div class="hint" id="dlHint" hidden>Файл сохранится в «Загрузки» телефона — таблица с ценой, доставкой, растаможкой и себестоимостью по каждому отмеченному товару.</div>
+    <div class="hint" id="dlHint" hidden>Сохранится файл Excel: таблица с ценой, доставкой, растаможкой и себестоимостью, фото товара — прямо в ячейках.</div>
   </section>
 
   <footer>
     Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.<br>
-    Курсы и тарифы сохраняются автоматически. Работает без интернета — добавьте страницу на домашний экран.<br>
+    Курсы и тарифы сохраняются автоматически. Работает без интернета.<br>
     <b>Версия от 21.08.2026</b>
-    <span id="syncLine"></span>
   </footer>
 
   <div class="bar">
@@ -578,40 +584,224 @@
     updateDownloadState();
   });
 
-  function csvCell(v) {
-    var s = String(v == null ? '' : v);
-    if (/[";\r\n]/.test(s)) s = '"' + s.replace(/"/g, '""') + '"';
+  /* ---- выгрузка в Excel ----
+     .xlsx это zip с xml внутри. Собираем его сами: подключать внешнюю
+     библиотеку нельзя, приложение должно работать без интернета.
+     Фото кладём в xl/media и привязываем к ячейкам первого столбца. */
+
+  var CRC = (function () {
+    var t = new Int32Array(256);
+    for (var n = 0; n < 256; n++) {
+      var c = n;
+      for (var k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+      t[n] = c;
+    }
+    return t;
+  })();
+
+  function crc32(bytes) {
+    var c = -1;
+    for (var i = 0; i < bytes.length; i++) c = CRC[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+    return (c ^ -1) >>> 0;
+  }
+
+  function utf8(str) { return new TextEncoder().encode(str); }
+
+  function dataUriToBytes(uri) {
+    var b64 = String(uri).split(',')[1] || '';
+    var bin = atob(b64);
+    var out = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+    return out;
+  }
+
+  /* zip без сжатия (метод 0) — фото уже сжаты, xml мелкий */
+  function zip(entries) {
+    var chunks = [], central = [], offset = 0;
+
+    function u16(v) { return [v & 0xFF, (v >>> 8) & 0xFF]; }
+    function u32(v) { return [v & 0xFF, (v >>> 8) & 0xFF, (v >>> 16) & 0xFF, (v >>> 24) & 0xFF]; }
+
+    entries.forEach(function (e) {
+      var name = utf8(e.name), data = e.data, sum = crc32(data);
+      var local = [].concat(
+        u32(0x04034B50), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+        u32(sum), u32(data.length), u32(data.length), u16(name.length), u16(0)
+      );
+      chunks.push(new Uint8Array(local), name, data);
+
+      central.push([].concat(
+        u32(0x02014B50), u16(20), u16(20), u16(0x0800), u16(0), u16(0), u16(0),
+        u32(sum), u32(data.length), u32(data.length),
+        u16(name.length), u16(0), u16(0), u16(0), u16(0), u32(0), u32(offset)
+      ), name);
+
+      offset += 30 + name.length + data.length;
+    });
+
+    var cdStart = offset, cdSize = 0;
+    central.forEach(function (x) { cdSize += x.length; });
+
+    var tail = [].concat(
+      u32(0x06054B50), u16(0), u16(0),
+      u16(entries.length), u16(entries.length), u32(cdSize), u32(cdStart), u16(0)
+    );
+
+    var parts = [];
+    chunks.forEach(function (c) { parts.push(c); });
+    central.forEach(function (c) { parts.push(c instanceof Uint8Array ? c : new Uint8Array(c)); });
+    parts.push(new Uint8Array(tail));
+    return new Blob(parts, { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+  }
+
+  function xmlEsc(v) {
+    return String(v == null ? '' : v)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&apos;')
+      .replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g, '');
+  }
+
+  function colName(i) {
+    var s = '';
+    i += 1;
+    while (i > 0) { var m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = (i - m - 1) / 26; }
     return s;
   }
 
-  function downloadCsv(list) {
-    var head = ['Товар', 'Цена ¥/шт', 'Кол-во в коробке', 'СВМ м³', 'Вес кг',
+  var PX = 9525;          // 1 пиксель = 9525 EMU
+  var PHOTO_PX = 56;      // размер фото в ячейке
+
+  function downloadXlsx(list) {
+    var head = ['Фото', 'Товар', 'Цена ¥/шт', 'Кол-во в коробке', 'СВМ м³', 'Вес кг',
       'Курс ¥/$', 'Доставка $/м³', 'Растаможка', 'Курс сум/$', 'Доп. расходы сум/шт',
       'Себестоимость $/шт', 'Себестоимость сум/шт'];
-    var rows = [head];
-    list.forEach(function (it) {
+
+    var rows = [], media = [], anchors = [];
+
+    list.forEach(function (it, idx) {
       var r = calcFrom(it);
-      var customsText = it.mode === 'kg'
+      var customs = it.mode === 'kg'
         ? (it.customsKg || '0') + ' $/кг'
         : (it.customsUnit || '0') + ' $/шт';
+
       rows.push([
-        it.name || 'Без названия',
+        '', it.name || 'Без названия',
         it.priceCny || '', it.perBox || '', it.cbm || '', it.weight || '',
-        it.rateCny || '', it.freight || '', customsText, it.rateUzs || '', it.extraUzs || '0',
+        it.rateCny || '', it.freight || '', customs, it.rateUzs || '', it.extraUzs || '0',
         r.total.toFixed(2).replace('.', ','),
         String(Math.round(r.sum))
       ]);
+
+      if (it.photo && /^data:image\/(jpeg|jpg|png)/i.test(it.photo)) {
+        var ext = /png/i.test(it.photo.slice(0, 20)) ? 'png' : 'jpeg';
+        media.push({ name: 'xl/media/image' + (media.length + 1) + '.' + ext, data: dataUriToBytes(it.photo) });
+        anchors.push({ id: media.length, row: idx + 1 });   // +1 — под шапкой
+      }
     });
-    var csv = rows.map(function (row) { return row.map(csvCell).join(';'); }).join('\r\n');
-    var blob = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
+
+    /* лист */
+    var sheet = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+      '<cols>' +
+      '<col min="1" max="1" width="10" customWidth="1"/>' +
+      '<col min="2" max="2" width="38" customWidth="1"/>' +
+      '<col min="3" max="13" width="15" customWidth="1"/>' +
+      '</cols><sheetData>';
+
+    function cellsFor(arr, rowNum, styled) {
+      var out = '<row r="' + rowNum + '"' + (rowNum > 1 ? ' ht="46" customHeight="1"' : '') + '>';
+      arr.forEach(function (v, c) {
+        if (v === '') return;
+        out += '<c r="' + colName(c) + rowNum + '" t="inlineStr"' + (styled ? ' s="1"' : '') +
+               '><is><t xml:space="preserve">' + xmlEsc(v) + '</t></is></c>';
+      });
+      return out + '</row>';
+    }
+
+    sheet += cellsFor(head, 1, true);
+    rows.forEach(function (row, i) { sheet += cellsFor(row, i + 2, false); });
+    sheet += '</sheetData><drawing r:id="rId1"/></worksheet>';
+
+    /* картинки */
+    var drawing = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<xdr:wsDr xmlns:xdr="http://schemas.openxmlformats.org/drawingml/2006/spreadsheetDrawing" ' +
+      'xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" ' +
+      'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">';
+    anchors.forEach(function (a, i) {
+      drawing +=
+        '<xdr:oneCellAnchor>' +
+          '<xdr:from><xdr:col>0</xdr:col><xdr:colOff>' + (4 * PX) + '</xdr:colOff>' +
+          '<xdr:row>' + a.row + '</xdr:row><xdr:rowOff>' + (3 * PX) + '</xdr:rowOff></xdr:from>' +
+          '<xdr:ext cx="' + (PHOTO_PX * PX) + '" cy="' + (PHOTO_PX * PX) + '"/>' +
+          '<xdr:pic>' +
+            '<xdr:nvPicPr><xdr:cNvPr id="' + (i + 2) + '" name="Фото ' + (i + 1) + '"/>' +
+            '<xdr:cNvPicPr><a:picLocks noChangeAspect="1"/></xdr:cNvPicPr></xdr:nvPicPr>' +
+            '<xdr:blipFill><a:blip r:embed="rId' + a.id + '"/>' +
+            '<a:stretch><a:fillRect/></a:stretch></xdr:blipFill>' +
+            '<xdr:spPr><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></xdr:spPr>' +
+          '</xdr:pic><xdr:clientData/>' +
+        '</xdr:oneCellAnchor>';
+    });
+    drawing += '</xdr:wsDr>';
+
+    var drawingRels = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+      media.map(function (m, i) {
+        return '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/' +
+               m.name.split('/').pop() + '"/>';
+      }).join('') + '</Relationships>';
+
+    var types = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+      '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+      '<Default Extension="xml" ContentType="application/xml"/>' +
+      '<Default Extension="jpeg" ContentType="image/jpeg"/>' +
+      '<Default Extension="png" ContentType="image/png"/>' +
+      '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+      '<Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>' +
+      '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+      '<Override PartName="/xl/drawings/drawing1.xml" ContentType="application/vnd.openxmlformats-officedocument.drawing+xml"/>' +
+      '</Types>';
+
+    var styles = '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+      '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+      '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font>' +
+      '<font><b/><sz val="11"/><name val="Calibri"/></font></fonts>' +
+      '<fills count="2"><fill><patternFill patternType="none"/></fill>' +
+      '<fill><patternFill patternType="gray125"/></fill></fills>' +
+      '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+      '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+      '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+      '<xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"><alignment vertical="center" wrapText="1"/></xf>' +
+      '</cellXfs>' +
+      '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+      '</styleSheet>';
+
+    var files = [
+      { name: '[Content_Types].xml', data: utf8(types) },
+      { name: '_rels/.rels', data: utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>') },
+      { name: 'xl/workbook.xml', data: utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Себестоимость" sheetId="1" r:id="rId1"/></sheets></workbook>') },
+      { name: 'xl/_rels/workbook.xml.rels', data: utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>') },
+      { name: 'xl/styles.xml', data: utf8(styles) },
+      { name: 'xl/worksheets/sheet1.xml', data: utf8(sheet) },
+      { name: 'xl/worksheets/_rels/sheet1.xml.rels', data: utf8('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/drawing" Target="../drawings/drawing1.xml"/></Relationships>') },
+      { name: 'xl/drawings/drawing1.xml', data: utf8(drawing) },
+      { name: 'xl/drawings/_rels/drawing1.xml.rels', data: utf8(drawingRels) }
+    ].concat(media);
+
+    var blob = zip(files);
+    var d = new Date();
+    var stamp = d.getFullYear() + '-' +
+      ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
     var url = URL.createObjectURL(blob);
     var link = document.createElement('a');
     link.href = url;
-    link.download = 'sebestoimost_' + new Date().toISOString().slice(0, 10) + '.csv';
+    link.download = 'sebestoimost_' + stamp + '.xlsx';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
   }
 
   document.getElementById('download').addEventListener('click', function () {
@@ -620,7 +810,7 @@
     [].forEach.call(document.querySelectorAll('#list input[type="checkbox"]'), function (b) {
       if (b.checked) picked.push(a[+b.dataset.index]);
     });
-    if (picked.length) downloadCsv(picked);
+    if (picked.length) downloadXlsx(picked);
   });
 
   document.getElementById('save').addEventListener('click', function () {
@@ -633,7 +823,6 @@
     if (idx >= 0) a[idx] = o; else a.unshift(o);
     saveItems(a);
     drawList();
-    sendToServer(o);
   });
 
   document.getElementById('reset').addEventListener('click', function () {
@@ -647,79 +836,15 @@
     render();
   });
 
-  /* ---- отправка на сервер ----
-     Расчёт всегда сначала ложится в телефон, потом уходит на сервер.
-     Нет связи — копится в очереди и досылается при следующем открытии. */
-
-  var KEY_DEV = 'sebes.device.v1';
-  var KEY_QUEUE = 'sebes.queue.v1';
-
-  function deviceId() {
-    var id = load(KEY_DEV);
-    if (!id) {
-      id = (window.crypto && crypto.randomUUID)
-        ? crypto.randomUUID()
-        : 'd-' + Math.random().toString(36).slice(2) + '-' + (+new Date()).toString(36);
-      store(KEY_DEV, id);
-    }
-    return id;
-  }
-
-  function queue() {
-    try { return JSON.parse(load(KEY_QUEUE) || '[]'); } catch (e) { return []; }
-  }
-  function setQueue(a) { store(KEY_QUEUE, JSON.stringify(a.slice(-100))); }
-
-  function syncNote(text) {
-    var s = document.getElementById('syncLine');
-    if (s) s.innerHTML = text ? '<br>' + text : '';
-  }
-
-  function post(payload) {
-    return fetch('/api/calc', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload)
-    }).then(function (r) {
-      if (!r.ok) throw new Error('HTTP ' + r.status);
-      return r;
-    });
-  }
-
-  function sendToServer(o) {
-    var payload = { device: deviceId() };
-    F.forEach(function (id) { payload[id] = o[id]; });
-    payload.mode = o.mode;
-    payload.photo = o.photo || '';
-
-    post(payload).then(function () {
-      syncNote('Расчёт отправлен.');
-      flushQueue();
-    }).catch(function () {
-      var q = queue();
-      q.push(payload);
-      setQueue(q);
-      syncNote('Нет связи — расчёт сохранён в телефоне, отправится позже (' + q.length + ' в очереди).');
-    });
-  }
-
-  function flushQueue() {
-    var q = queue();
-    if (!q.length) return;
-    var next = q[0];
-    post(next).then(function () {
-      var rest = queue();
-      rest.shift();
-      setQueue(rest);
-      if (rest.length) flushQueue();
-      else syncNote('Всё отправлено.');
-    }).catch(function () { /* связи всё ещё нет — пробуем в следующий раз */ });
-  }
-
   apply(JSON.parse(load(KEY_CUR) || 'null'));
   render();
   drawList();
-  flushQueue();
-  window.addEventListener('online', flushQueue);
+
+  /* офлайн-режим: работает только по https, для локального файла молча пропускаем */
+  if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
+    window.addEventListener('load', function () {
+      navigator.serviceWorker.register('./sw.js').catch(function () {});
+    });
+  }
 })();
 </script>

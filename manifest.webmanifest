@@ -1,0 +1,17 @@
+{
+  "name": "Себестоимость из Китая",
+  "short_name": "Себестоимость",
+  "description": "Расчёт себестоимости товара: юани, доставка по объёму, растаможка — итог в сумах за штуку.",
+  "lang": "ru",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#EDF0F2",
+  "theme_color": "#BC5127",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
