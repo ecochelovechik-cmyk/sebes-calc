@@ -128,19 +128,27 @@
   .hint { font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
   /* ---------- переключатель растаможки ---------- */
-  .seg { display: flex; background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; cursor: pointer; }
-  .seg button {
+  /* Родные радиокнопки: переключение делает сам браузер, без JS.
+     Самодельные кнопки на iOS вели себя ненадёжно. */
+  .seg { display: flex; background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; }
+  .seg input[type="radio"] { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
+  .seg label {
+    display: block;
     flex: 1;
+    text-align: center;
     font-family: var(--sans);
     font-size: 13px;
     color: var(--ink-2);
-    background: none;
-    border: 0;
     border-radius: 7px;
-    padding: 7px 4px;
+    padding: 8px 4px;
     cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
   }
-  .seg button[aria-pressed="true"] { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+  .seg input[type="radio"]:checked + label {
+    background: var(--card); color: var(--ink); font-weight: 600;
+    box-shadow: 0 1px 2px rgba(0,0,0,.12);
+  }
+  .seg input[type="radio"]:focus-visible + label { outline: 2px solid var(--accent); outline-offset: 1px; }
 
   /* ---------- фото ---------- */
   .photorow { display: flex; gap: 12px; align-items: center; }
@@ -279,8 +287,10 @@
       <div class="full">
         <span class="lb" style="display:block;margin-bottom:5px">Растаможка считается</span>
         <div class="seg" id="seg">
-          <button type="button" data-mode="unit" aria-pressed="true">за штуку, $</button>
-          <button type="button" data-mode="kg" aria-pressed="false">за кг, $</button>
+          <input type="radio" name="cmode" id="modeUnit" value="unit" checked>
+          <label for="modeUnit">за штуку, $</label>
+          <input type="radio" name="cmode" id="modeKg" value="kg">
+          <label for="modeKg">за кг, $</label>
         </div>
       </div>
       <label id="wrapUnit">
@@ -336,7 +346,8 @@
 
   <footer>
     Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.<br>
-    Курсы и тарифы сохраняются автоматически. Работает без интернета — добавьте страницу на домашний экран.
+    Курсы и тарифы сохраняются автоматически. Работает без интернета — добавьте страницу на домашний экран.<br>
+    <b>Версия от 21.08.2026</b>
     <span id="syncLine"></span>
   </footer>
 
@@ -425,9 +436,8 @@
     mode = m;
     document.getElementById('wrapUnit').hidden = (m !== 'unit');
     document.getElementById('wrapKg').hidden = (m !== 'kg');
-    [].forEach.call(document.querySelectorAll('#seg button'), function (b) {
-      b.setAttribute('aria-pressed', b.dataset.mode === m ? 'true' : 'false');
-    });
+    var radio = document.getElementById(m === 'kg' ? 'modeKg' : 'modeUnit');
+    if (radio) radio.checked = true;
   }
 
   function setPhoto(data) {
@@ -452,9 +462,9 @@
   /* Обработчик — на каждую кнопку отдельно.
      iOS Safari не всегда доводит тап до обычного <div>-родителя,
      поэтому делегирование здесь не работало и переключатель не срабатывал. */
-  [].forEach.call(document.querySelectorAll('#seg button'), function (b) {
-    b.addEventListener('click', function () {
-      setMode(b.dataset.mode);
+  [].forEach.call(document.querySelectorAll('#seg input[type="radio"]'), function (r) {
+    r.addEventListener('change', function () {
+      setMode(r.value);
       render();
     });
   });
