@@ -234,6 +234,14 @@
 
   footer { color: var(--ink-2); font-size: 12px; padding: 4px 2px 20px; line-height: 1.6; }
   footer code { font-family: var(--mono); font-size: 11px; }
+  .feedback {
+    display: inline-flex; align-items: center; gap: 6px;
+    margin-top: 10px;
+    font-family: var(--sans); font-size: 13px; font-weight: 600;
+    color: var(--accent); background: var(--accent-soft);
+    border-radius: 9px; padding: 8px 13px;
+    text-decoration: none;
+  }
 
   @media (max-width: 380px) {
     .grid { grid-template-columns: 1fr; }
@@ -354,7 +362,8 @@
   <footer>
     Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.<br>
     Курсы и тарифы сохраняются автоматически. Работает без интернета.<br>
-    <b>Версия от 21.08.2026</b>
+    <b>Версия от 21.08.2026</b><br>
+    <a class="feedback" id="feedback" href="#" target="_blank" rel="noopener">✉️ Сообщить о проблеме</a>
   </footer>
 
   <div class="bar">
@@ -858,6 +867,14 @@
   apply(JSON.parse(load(KEY_CUR) || 'null'));
   render();
   drawList();
+
+  /* обратная связь: открывает чат в Telegram с заготовленным сообщением,
+     чтобы было понятно, из какой версии страницы пишет человек */
+  (function () {
+    var msg = 'Проблема в калькуляторе себестоимости (версия от 21.08.2026): ';
+    document.getElementById('feedback').href =
+      'https://t.me/Rashiduzt?text=' + encodeURIComponent(msg);
+  })();
 
   /* офлайн-режим: работает только по https, для локального файла молча пропускаем */
   if ('serviceWorker' in navigator && location.protocol.indexOf('http') === 0) {
