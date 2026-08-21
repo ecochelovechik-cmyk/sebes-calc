@@ -128,7 +128,7 @@
   .hint { font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
 
   /* ---------- переключатель растаможки ---------- */
-  .seg { display: flex; background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; }
+  .seg { display: flex; background: var(--field); border: 1px solid var(--line); border-radius: 9px; padding: 3px; gap: 3px; cursor: pointer; }
   .seg button {
     flex: 1;
     font-family: var(--sans);
@@ -449,11 +449,14 @@
     el[id].addEventListener('input', render);
   });
 
-  document.getElementById('seg').addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    if (!b) return;
-    setMode(b.dataset.mode);
-    render();
+  /* Обработчик — на каждую кнопку отдельно.
+     iOS Safari не всегда доводит тап до обычного <div>-родителя,
+     поэтому делегирование здесь не работало и переключатель не срабатывал. */
+  [].forEach.call(document.querySelectorAll('#seg button'), function (b) {
+    b.addEventListener('click', function () {
+      setMode(b.dataset.mode);
+      render();
+    });
   });
 
   /* ---- фото: сжимаем до 320 px ---- */
