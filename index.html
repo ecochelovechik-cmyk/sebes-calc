@@ -243,6 +243,24 @@
     text-decoration: none;
   }
 
+  details.help {
+    background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+    padding: 12px 14px; margin-bottom: 12px;
+  }
+  details.help summary {
+    font-family: var(--sans); font-size: 14px; font-weight: 700; color: var(--ink);
+    cursor: pointer; list-style: none;
+  }
+  details.help summary::-webkit-details-marker { display: none; }
+  details.help summary::after { content: '  ›'; color: var(--ink-2); }
+  details.help[open] summary::after { content: '  ⌄'; }
+  details.help ol {
+    margin: 10px 0 2px; padding-left: 20px;
+    display: flex; flex-direction: column; gap: 8px;
+    font-size: 13px; line-height: 1.5; color: var(--ink);
+  }
+  details.help b { color: var(--ink); }
+
   @media (max-width: 380px) {
     .grid { grid-template-columns: 1fr; }
     .bar .big { font-size: 23px; }
@@ -360,6 +378,22 @@
   </section>
 
   <footer>
+    <details class="help">
+      <summary>❓ Как пользоваться</summary>
+      <ol>
+        <li>Впишите цифры в поля — остальное посчитается само, ничего умножать вручную не нужно.</li>
+        <li>Внизу экрана сразу видна готовая цена в сумах.</li>
+        <li>Нажмите <b>«Сохранить товар»</b>, чтобы он не потерялся.</li>
+        <li>Хотите посчитать ещё один товар? Сотрите название, впишите новые цифры и снова нажмите <b>«Сохранить товар»</b> — старый расчёт при этом никуда не денется.</li>
+        <li>Чтобы поправить уже сохранённый товар — нажмите <b>«Открыть»</b> у него в списке, измените цифры и снова «Сохранить товар».</li>
+        <li>Чтобы отправить товары себе — поставьте галочки в списке и нажмите <b>«Скачать Excel»</b>: придёт файл с ценами и фото.</li>
+        <li>Чтобы открывать одним нажатием, как обычное приложение — добавьте страницу на главный экран:<br>
+          Android (Chrome): значок ⋮ в углу → «Добавить на главный экран».<br>
+          iPhone (Safari): значок «Поделиться» → «На экран Домой».</li>
+        <li>Что-то не работает или непонятно — жмите «Сообщить о проблеме» ниже, это сразу откроет чат.</li>
+      </ol>
+    </details>
+
     Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.<br>
     Курсы и тарифы сохраняются автоматически. Работает без интернета.<br>
     <b>Версия от 21.08.2026</b><br>
