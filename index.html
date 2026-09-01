@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Себестоимость из Китая</title>
+<title>Себестоимость товара</title>
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./apple-touch-icon.png">
 <link rel="icon" href="./icon-192.png">
@@ -84,12 +84,19 @@
     text-wrap: balance;
   }
   .sub { color: var(--ink-2); font-size: 13px; }
-  #langSelect {
+  #langSelect, select.sel {
     flex: none;
     font-family: var(--sans); font-size: 13px; font-weight: 600;
     color: var(--ink); background: var(--field);
     border: 1px solid var(--line); border-radius: 9px;
     padding: 7px 9px; margin-top: 2px;
+  }
+  /* Выпадающий список страны/валюты — во всю ширину поля, как обычный инпут.
+     Родной <select>: на iOS открывается системным «барабаном» и работает
+     без JS-обвязки, как и родные радиокнопки в переключателе растаможки. */
+  select.sel {
+    width: 100%; box-sizing: border-box;
+    font-size: 15px; padding: 10px 11px; margin-top: 0;
   }
 
   /* ---------- карточка-раздел ---------- */
@@ -140,6 +147,9 @@
     outline-offset: 1px;
   }
   .hint { font-size: 11px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+  /* Не заполнен курс — считать нечем. Показываем это явно:
+     молча выдать 0 хуже, чем не выдать ничего. */
+  .warn { font-size: 12px; font-weight: 600; color: var(--accent); }
 
   /* ---------- переключатель растаможки ---------- */
   /* Родные радиокнопки: переключение делает сам браузер, без JS.
@@ -323,9 +333,18 @@
   <section>
     <div class="cap" id="capRates">Курсы и тарифы</div>
     <div class="grid">
+      <label class="full">
+        <span class="lb" id="lblBuyCur"><b>Закуп</b> — страна и валюта</span>
+        <select class="sel" id="buyCur"></select>
+      </label>
+      <label class="full" id="wrapBuyCurName" hidden>
+        <span class="lb" id="lblBuyCurName">Как называется валюта закупа</span>
+        <input type="text" class="txt" id="buyCurName" placeholder="дирхам">
+      </label>
       <label>
         <span class="lb" id="lblRateCny"><b>Курс доллара</b> ¥ за $</span>
         <input type="text" inputmode="decimal" id="rateCny" value="6,67">
+        <span class="warn" id="warnBuyRate" hidden>впишите курс</span>
       </label>
       <label>
         <span class="lb" id="lblFreight"><b>Доставка</b> $ за м³</span>
@@ -351,9 +370,18 @@
         <input type="text" inputmode="decimal" id="customsKg" value="">
         <span class="hint" id="hintCustomsKg">нужен вес коробки</span>
       </label>
+      <label class="full">
+        <span class="lb" id="lblDstCur"><b>Приход груза</b> — страна и валюта</span>
+        <select class="sel" id="dstCur"></select>
+      </label>
+      <label class="full" id="wrapDstCurName" hidden>
+        <span class="lb" id="lblDstCurName">Как называется валюта прихода</span>
+        <input type="text" class="txt" id="dstCurName" placeholder="дирхам">
+      </label>
       <label>
         <span class="lb" id="lblRateUzs"><b>Курс сумм</b> за $</span>
         <input type="text" inputmode="decimal" id="rateUzs" value="12000">
+        <span class="warn" id="warnDstRate" hidden>впишите курс</span>
       </label>
       <label>
         <span class="lb" id="lblExtra">Доп. расходы, сум/шт</span>
@@ -417,24 +445,71 @@
 
 <script>
 (function () {
-  var F = ['name','priceCny','perBox','cbm','weight','rateCny','freight','customsUnit','customsKg','rateUzs','extraUzs'];
+  var VERSION = '01.09.2026';
+
+  /* Имена полей исторические: priceCny/rateCny — цена и курс валюты ЗАКУПА
+     (не обязательно юань), rateUzs/extraUzs — валюты ПРИХОДА (не обязательно сум).
+     Переименовывать нельзя: под этими ключами лежат уже сохранённые расчёты
+     в телефонах у людей. */
+  var F = ['name','priceCny','perBox','cbm','weight','rateCny','freight','customsUnit','customsKg','rateUzs','extraUzs','buyCurName','dstCurName'];
   var el = {};
   F.forEach(function (id) { el[id] = document.getElementById(id); });
+
+  /* ---- валюты ----
+     dec — сколько знаков после запятой показывать в итоге.
+     Сум и тенге считаем целыми, сомони и рубль — с копейками:
+     округлить сомони до целого = потерять около 9 рублей на штуке. */
+  var CUR_LIST_BUY = ['cny', 'krw', 'thb', 'try', 'usd', 'xxx'];
+  var CUR_LIST_DST = ['uzs', 'tjs', 'rub', 'kzt', 'xxx'];
+  var CUR_META = {
+    cny: { flag: '🇨🇳', dec: 2 },
+    krw: { flag: '🇰🇷', dec: 0 },
+    thb: { flag: '🇹🇭', dec: 2 },
+    'try': { flag: '🇹🇷', dec: 2 },
+    usd: { flag: '🇺🇸', dec: 2 },
+    uzs: { flag: '🇺🇿', dec: 0 },
+    tjs: { flag: '🇹🇯', dec: 2 },
+    rub: { flag: '🇷🇺', dec: 2 },
+    kzt: { flag: '🇰🇿', dec: 0 },
+    xxx: { flag: '🌐', dec: 2 }
+  };
+  /* Подтверждены только эти два (см. базу знаний). Остальные курсы человек
+     вписывает сам — подставлять выдуманную цифру опаснее, чем пустое поле. */
+  var RATE_DEFAULT = { cny: '6,67', uzs: '12000', usd: '1' };
 
   /* ---- переводы: ru / uz (латиница) / uzc (кириллица) / en ---- */
   var I18N = {
     ru: {
-      title: "Себестоимость из Китая",
-      sub: "Цена в юанях → доставка по объёму → растаможка → сум за штуку",
+      titleTpl: "Себестоимость {FROM}",
+      titleGeneric: "Себестоимость товара",
+      sub: "Цена {S} → доставка по объёму → растаможка → {D} за штуку",
+      cur: {
+        cny: { c: "Китай",   n: "юань",   s: "¥", from: "из Китая" },
+        krw: { c: "Корея",   n: "вона",   s: "₩", from: "из Кореи" },
+        thb: { c: "Таиланд", n: "бат",    s: "฿", from: "из Таиланда" },
+        'try': { c: "Турция", n: "лира",  s: "₺", from: "из Турции" },
+        usd: { c: "США",     n: "доллар", s: "$", from: "из США" },
+        uzs: { c: "Узбекистан",   n: "сум",    s: "сум" },
+        tjs: { c: "Таджикистан",  n: "сомони", s: "сомони" },
+        rub: { c: "Россия",       n: "рубль",  s: "₽" },
+        kzt: { c: "Казахстан",    n: "тенге",  s: "₸" },
+        xxx: { c: "Другая страна", n: "своя валюта", s: "" }
+      },
+      lblBuyCur: "<b>Закуп</b> — страна и валюта",
+      lblDstCur: "<b>Приход груза</b> — страна и валюта",
+      lblBuyCurName: "Как называется валюта закупа",
+      lblDstCurName: "Как называется валюта прихода",
+      curNamePlaceholder: "дирхам",
+      warnRate: "впишите курс",
       capProduct: "Товар",
       photoPlaceholder: "Фото<br>товара",
       lblName: "Название",
-      lblPrice: "<b>Цена</b> ¥ за шт",
+      lblPrice: "<b>Цена</b> {S} за шт",
       lblPerBox: "<b>Кол-во</b> в коробке",
       lblCbm: "<b>СВМ</b> коробки, м³",
       lblWeight: "<b>Вес</b> коробки, кг",
       capRates: "Курсы и тарифы",
-      lblRateCny: "<b>Курс доллара</b> ¥ за $",
+      lblRateCny: "<b>Курс доллара</b> {S} за $",
       lblFreight: "<b>Доставка</b> $ за м³",
       hintFreight: "только сама перевозка, без растаможки",
       lblCustomsLegend: "Растаможка считается",
@@ -444,8 +519,8 @@
       lblCustomsUnit: "Растаможка <b>штука</b>, $",
       lblCustomsKg: "Растаможка <b>кг</b>, $",
       hintCustomsKg: "нужен вес коробки",
-      lblRateUzs: "<b>Курс сумм</b> за $",
-      lblExtra: "Доп. расходы, сум/шт",
+      lblRateUzs: "<b>Курс</b> {D} за $",
+      lblExtra: "Доп. расходы, {D}/шт",
       hintExtra: "упаковка, доставка до склада",
       capCalc: "Расчёт на 1 штуку",
       rkGoods: "Цена товара 1 шт",
@@ -473,6 +548,7 @@
       helpSummary: "❓ Как пользоваться",
       helpItems: [
         "Впишите цифры в поля — остальное посчитается само, ничего умножать вручную не нужно.",
+        "<b>Сначала выберите две страны</b> — «Закуп» (где покупаете: Китай, Корея, Таиланд…) и «Приход груза» (куда везёте: Узбекистан, Таджикистан…). Все подписи и итог сразу переключатся на нужную валюту. Курс каждой валюты запоминается отдельно, поэтому при смене страны в поле не останется чужой курс. Если курс пуст — впишите его, иначе расчёта не будет.",
         "<b>Доставка бывает двух видов — тут легко ошибиться:</b><br>🔹 Если у логиста <b>всё включено одной ценой</b> («под ключ» — доставка + растаможка вместе за м³) — в поле <b>«Растаможка»</b> впишите <b>0</b>. Иначе растаможка посчитается два раза, и цена получится завышенной.<br>🔹 Если доставка и растаможка <b>отдельные суммы</b> — впишите доставку за м³ в своё поле, а настоящую растаможку (за штуку или за кг) — в поле «Растаможка». Калькулятор сам сложит их вместе.",
         "Растаможку можно считать <b>за штуку</b> или <b>за кг</b> — переключите нужный вариант кнопками «за штуку» / «за кг» над полем растаможки, смотря как вам называет цену поставщик или логист.",
         "Внизу экрана сразу видна готовая цена в сумах.",
@@ -483,29 +559,47 @@
         "Чтобы открывать одним нажатием, как обычное приложение — добавьте страницу на главный экран:<br>Android (Chrome): значок ⋮ в углу → «Добавить на главный экран».<br>iPhone (Safari): значок «Поделиться» → «На экран Домой».",
         "Что-то не работает или непонятно — жмите <b>«Сообщить о проблеме»</b> ниже: откроется чат в Telegram с уже готовым началом сообщения. Опишите своими словами, что случилось, и отправьте — так будет понятно, что чинить."
       ],
-      formulaLine: "Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.",
+      formulaLine: "Себестоимость = цена ÷ курс к $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс валюты прихода.",
       footerNote2: "Курсы и тарифы сохраняются автоматически. Работает без интернета.",
       versionPrefix: "Версия от",
       feedbackText: "✉️ Сообщить о проблеме",
-      feedbackMsgPrefix: "Проблема в калькуляторе себестоимости (версия от 21.08.2026): ",
-      currencyWord: "сум",
-      xlsxHead: ["Фото", "Товар", "Цена ¥/шт", "Кол-во в коробке", "СВМ м³", "Вес кг", "Курс ¥/$", "Доставка $/м³", "Растаможка", "Курс сум/$", "Доп. расходы сум/шт", "Себестоимость $/шт", "Себестоимость сум/шт"],
+      feedbackMsgPrefix: "Проблема в калькуляторе себестоимости (версия от {V}): ",
+      xlsxHead: ["Фото", "Товар", "Откуда", "Цена за шт", "Кол-во в коробке", "СВМ м³", "Вес кг", "Курс закупа", "Доставка $/м³", "Растаможка", "Куда", "Курс прихода", "Доп. расходы /шт", "Себестоимость $/шт", "Себестоимость /шт"],
       xlsxSheetName: "Себестоимость",
       customsPerKg: " $/кг",
       customsPerUnit: " $/шт"
     },
     uz: {
-      title: "Xitoydan tan narxi",
-      sub: "Narx yuanda → hajm bo'yicha yetkazish → bojxona → so'mda tan narx",
+      titleTpl: "{FROM} tan narxi",
+      titleGeneric: "Mahsulot tan narxi",
+      sub: "Narx {S} → hajm bo'yicha yetkazish → bojxona → 1 dona uchun {D}",
+      cur: {
+        cny: { c: "Xitoy",    n: "yuan",   s: "¥", from: "Xitoydan" },
+        krw: { c: "Koreya",   n: "von",    s: "₩", from: "Koreyadan" },
+        thb: { c: "Tailand",  n: "bat",    s: "฿", from: "Tailanddan" },
+        'try': { c: "Turkiya", n: "lira",  s: "₺", from: "Turkiyadan" },
+        usd: { c: "AQSh",     n: "dollar", s: "$", from: "AQShdan" },
+        uzs: { c: "O'zbekiston",  n: "so'm",   s: "so'm" },
+        tjs: { c: "Tojikiston",   n: "somoni", s: "somoni" },
+        rub: { c: "Rossiya",      n: "rubl",   s: "₽" },
+        kzt: { c: "Qozog'iston",  n: "tenge",  s: "₸" },
+        xxx: { c: "Boshqa davlat", n: "o'z valyutasi", s: "" }
+      },
+      lblBuyCur: "<b>Xarid</b> — davlat va valyuta",
+      lblDstCur: "<b>Yuk keladi</b> — davlat va valyuta",
+      lblBuyCurName: "Xarid valyutasi nomi",
+      lblDstCurName: "Kelish valyutasi nomi",
+      curNamePlaceholder: "dirham",
+      warnRate: "kursni kiriting",
       capProduct: "Mahsulot",
       photoPlaceholder: "Mahsulot<br>surati",
       lblName: "Nomi",
-      lblPrice: "<b>Narxi</b> ¥/dona",
+      lblPrice: "<b>Narxi</b> {S}/dona",
       lblPerBox: "<b>Soni</b> qutida",
       lblCbm: "<b>Hajmi</b>, m³",
       lblWeight: "<b>Og'irligi</b>, kg",
       capRates: "Kurslar va tariflar",
-      lblRateCny: "<b>Dollar kursi</b> ¥/$",
+      lblRateCny: "<b>Dollar kursi</b> {S}/$",
       lblFreight: "<b>Yetkazish</b> $/m³",
       hintFreight: "faqat tashish, bojxonasiz",
       lblCustomsLegend: "Bojxona qanday hisoblanadi",
@@ -515,8 +609,8 @@
       lblCustomsUnit: "Bojxona <b>dona</b>, $",
       lblCustomsKg: "Bojxona <b>kg</b>, $",
       hintCustomsKg: "quti og'irligi kerak",
-      lblRateUzs: "<b>So'm kursi</b>, $",
-      lblExtra: "Qo'shimcha xarajat, so'm/dona",
+      lblRateUzs: "<b>Kurs</b> {D}/$",
+      lblExtra: "Qo'shimcha xarajat, {D}/dona",
       hintExtra: "qadoqlash, omborgacha yetkazish",
       capCalc: "1 dona uchun hisob-kitob",
       rkGoods: "1 dona narxi",
@@ -544,6 +638,7 @@
       helpSummary: "❓ Qanday foydalanish kerak",
       helpItems: [
         "Raqamlarni maydonlarga yozing — qolganini o'zi hisoblaydi, qo'lda ko'paytirish shart emas.",
+        "<b>Avval ikkita davlatni tanlang</b> — «Xarid» (qayerdan sotib olyapsiz: Xitoy, Koreya, Tailand…) va «Yuk keladi» (qayerga olib kelyapsiz: O'zbekiston, Tojikiston…). Barcha yozuvlar va natija darhol kerakli valyutaga o'tadi. Har bir valyutaning kursi alohida eslab qolinadi, shuning uchun davlat almashganda maydonda boshqa kurs qolmaydi. Kurs bo'sh bo'lsa — uni kiriting, aks holda hisob bo'lmaydi.",
         "<b>Yetkazish ikki xil bo'ladi — shu yerda adashish oson:</b><br>🔹 Agar logistda hammasi bitta narxga kiritilgan bo'lsa («kalit topshirish» — yetkazish + bojxona birga, m³ uchun) — <b>«Bojxona»</b> maydoniga <b>0</b> yozing. Aks holda bojxona ikki marta hisoblanib, narx oshib ketadi.<br>🔹 Agar yetkazish va bojxona <b>alohida summalar</b> bo'lsa — yetkazishni m³ uchun o'z maydoniga, haqiqiy bojxonani (dona yoki kg uchun) — «Bojxona» maydoniga yozing. Kalkulyator ularni o'zi qo'shadi.",
         "Bojxonani <b>dona uchun</b> yoki <b>kg uchun</b> hisoblash mumkin — bojxona maydoni ustidagi «dona uchun» / «kg uchun» tugmalaridan kerakligini tanlang, ta'minotchi yoki logist narxni qanday aytganiga qarab.",
         "Ekranning pastida darhol tayyor narx so'mda ko'rinadi.",
@@ -554,29 +649,47 @@
         "Bir bosishda, oddiy ilova kabi ochish uchun — sahifani bosh ekranga qo'shing:<br>Android (Chrome): burchakdagi ⋮ belgisi → «Bosh ekranga qo'shish».<br>iPhone (Safari): «Ulashish» belgisi → «Bosh ekranga qo'shish».",
         "Nimadir ishlamayaptimi yoki tushunarsizmi — pastdagi <b>«Muammo haqida yozish»</b>ni bosing: Telegram'da tayyor matn bilan chat ochiladi. Nima bo'lganini o'z so'zlaringiz bilan yozib, yuboring — shunda nimani tuzatish kerakligi aniq bo'ladi."
       ],
-      formulaLine: "Tan narx = ¥ ÷ dollar kursi &nbsp;+&nbsp; hajm × tarif ÷ qutidagi soni &nbsp;+&nbsp; bojxona, hammasi × so'm kursi.",
+      formulaLine: "Tan narx = narx ÷ dollar kursi &nbsp;+&nbsp; hajm × tarif ÷ qutidagi soni &nbsp;+&nbsp; bojxona, hammasi × kelish valyutasi kursi.",
       footerNote2: "Kurslar va tariflar avtomatik saqlanadi. Internetsiz ishlaydi.",
       versionPrefix: "Versiya:",
       feedbackText: "✉️ Muammo haqida yozish",
-      feedbackMsgPrefix: "Tan narx kalkulyatoridagi muammo (versiya: 21.08.2026): ",
-      currencyWord: "so'm",
-      xlsxHead: ["Surat", "Mahsulot", "Narxi ¥/dona", "Qutidagi soni", "Hajmi m³", "Og'irligi kg", "Dollar kursi ¥/$", "Yetkazish $/m³", "Bojxona", "So'm kursi/$", "Qo'shimcha xarajat so'm/dona", "Tan narx $/dona", "Tan narx so'm/dona"],
+      feedbackMsgPrefix: "Tan narx kalkulyatoridagi muammo (versiya: {V}): ",
+      xlsxHead: ["Surat", "Mahsulot", "Qayerdan", "Narxi/dona", "Qutidagi soni", "Hajmi m³", "Og'irligi kg", "Xarid kursi", "Yetkazish $/m³", "Bojxona", "Qayerga", "Kelish kursi", "Qo'shimcha xarajat/dona", "Tan narx $/dona", "Tan narx/dona"],
       xlsxSheetName: "Tan narx",
       customsPerKg: " $/kg",
       customsPerUnit: " $/dona"
     },
     en: {
-      title: "Cost from China",
-      sub: "Price in yuan → freight per volume → customs → cost in UZS per unit",
+      titleTpl: "Cost {FROM}",
+      titleGeneric: "Item cost price",
+      sub: "Price {S} → freight per volume → customs → {D} per unit",
+      cur: {
+        cny: { c: "China",    n: "yuan", s: "¥", from: "from China" },
+        krw: { c: "Korea",    n: "won",  s: "₩", from: "from Korea" },
+        thb: { c: "Thailand", n: "baht", s: "฿", from: "from Thailand" },
+        'try': { c: "Turkey", n: "lira", s: "₺", from: "from Turkey" },
+        usd: { c: "USA",      n: "dollar", s: "$", from: "from the USA" },
+        uzs: { c: "Uzbekistan", n: "sum",    s: "UZS" },
+        tjs: { c: "Tajikistan", n: "somoni", s: "TJS" },
+        rub: { c: "Russia",     n: "rouble", s: "₽" },
+        kzt: { c: "Kazakhstan", n: "tenge",  s: "₸" },
+        xxx: { c: "Other country", n: "custom currency", s: "" }
+      },
+      lblBuyCur: "<b>Buying in</b> — country and currency",
+      lblDstCur: "<b>Arriving in</b> — country and currency",
+      lblBuyCurName: "Name of the buying currency",
+      lblDstCurName: "Name of the arrival currency",
+      curNamePlaceholder: "dirham",
+      warnRate: "enter the rate",
       capProduct: "Item",
       photoPlaceholder: "Item<br>photo",
       lblName: "Name",
-      lblPrice: "<b>Price</b> ¥/pc",
+      lblPrice: "<b>Price</b> {S}/pc",
       lblPerBox: "<b>Qty</b> per box",
       lblCbm: "<b>Volume</b> of box, m³",
       lblWeight: "<b>Weight</b> of box, kg",
       capRates: "Rates & tariffs",
-      lblRateCny: "<b>USD rate</b> ¥ per $",
+      lblRateCny: "<b>USD rate</b> {S} per $",
       lblFreight: "<b>Freight</b> $ per m³",
       hintFreight: "shipping only, customs not included",
       lblCustomsLegend: "Customs is calculated",
@@ -586,8 +699,8 @@
       lblCustomsUnit: "Customs <b>per piece</b>, $",
       lblCustomsKg: "Customs <b>per kg</b>, $",
       hintCustomsKg: "box weight needed",
-      lblRateUzs: "<b>UZS rate</b> per $",
-      lblExtra: "Extra costs, UZS/pc",
+      lblRateUzs: "<b>Rate</b> {D} per $",
+      lblExtra: "Extra costs, {D}/pc",
       hintExtra: "packaging, delivery to warehouse",
       capCalc: "Cost per unit",
       rkGoods: "Item price /pc",
@@ -615,6 +728,7 @@
       helpSummary: "❓ How to use",
       helpItems: [
         "Type numbers into the fields — everything else is calculated for you, no manual math needed.",
+        "<b>First pick the two countries</b> — «Buying in» (where you purchase: China, Korea, Thailand…) and «Arriving in» (where the goods land: Uzbekistan, Tajikistan…). Every label and the final figure switch to that currency at once. Each currency keeps its own exchange rate, so switching country never leaves the wrong rate behind. If the rate is blank — type it in, otherwise there is no calculation.",
         "<b>There are two kinds of freight — easy to mix up:</b><br>🔹 If your forwarder charges one all-in price («door-to-door», freight + customs together per m³) — enter <b>0</b> in the <b>«Customs»</b> field. Otherwise customs gets counted twice and the price comes out too high.<br>🔹 If freight and customs are <b>separate amounts</b> — enter freight per m³ in its own field, and the real customs fee (per piece or per kg) in the «Customs» field. The calculator adds them together.",
         "Customs can be calculated <b>per piece</b> or <b>per kg</b> — switch to whichever the toggle above the customs field, depending on how your supplier or forwarder quotes it.",
         "The finished price in UZS is always visible at the bottom of the screen.",
@@ -625,13 +739,12 @@
         "To open it in one tap, like a real app — add the page to your home screen:<br>Android (Chrome): the ⋮ icon → «Add to Home screen».<br>iPhone (Safari): the Share icon → «Add to Home Screen».",
         "Something not working, or unclear — tap <b>«Report a problem»</b> below: it opens a Telegram chat with a message already started. Describe what happened in your own words and send it — that way it's clear what needs fixing."
       ],
-      formulaLine: "Cost price = ¥ ÷ USD rate &nbsp;+&nbsp; volume × tariff ÷ qty per box &nbsp;+&nbsp; customs, all × UZS rate.",
+      formulaLine: "Cost price = price ÷ USD rate &nbsp;+&nbsp; volume × tariff ÷ qty per box &nbsp;+&nbsp; customs, all × arrival currency rate.",
       footerNote2: "Rates and tariffs are saved automatically. Works without internet.",
       versionPrefix: "Version:",
       feedbackText: "✉️ Report a problem",
-      feedbackMsgPrefix: "Issue in the cost calculator (version: 2026-08-21): ",
-      currencyWord: "UZS",
-      xlsxHead: ["Photo", "Item", "Price ¥/pc", "Qty per box", "Volume m³", "Weight kg", "USD rate ¥/$", "Freight $/m³", "Customs", "UZS rate/$", "Extra costs UZS/pc", "Cost $/pc", "Cost UZS/pc"],
+      feedbackMsgPrefix: "Issue in the cost calculator (version: {V}): ",
+      xlsxHead: ["Photo", "Item", "From", "Price /pc", "Qty per box", "Volume m³", "Weight kg", "Buying rate", "Freight $/m³", "Customs", "To", "Arrival rate", "Extra costs /pc", "Cost $/pc", "Cost /pc"],
       xlsxSheetName: "Cost price",
       customsPerKg: " $/kg",
       customsPerUnit: " $/pc"
@@ -645,6 +758,63 @@
 
   function tr(key) { return I18N[currentLang][key]; }
 
+  /* ---- валюты закупа и прихода ----
+     Сам выбор валют лежит в общем снимке формы (sebes.current.v1),
+     отдельного ключа ему не нужно. */
+  var KEY_RATES = 'sebes.rates.v1';
+  var buyCur = 'cny', dstCur = 'uzs';
+
+  function curOf(id, custom) {
+    var map = I18N[currentLang].cur;
+    var t = map[id] || map.xxx;
+    /* «Другая» — обозначение вписывает сам человек */
+    var sym = (id === 'xxx') ? (String(custom || '').trim() || '?') : t.s;
+    return { sym: sym, name: t.n, country: t.c, from: t.from || '',
+             dec: (CUR_META[id] || CUR_META.xxx).dec };
+  }
+  function buyOf() { return curOf(buyCur, el.buyCurName.value); }
+  function dstOf() { return curOf(dstCur, el.dstCurName.value); }
+
+  /* {S} — символ валюты закупа, {D} — валюты прихода, {V} — версия */
+  function fill(s) {
+    return String(s == null ? '' : s)
+      .replace(/\{S\}/g, buyOf().sym)
+      .replace(/\{D\}/g, dstOf().sym)
+      .replace(/\{V\}/g, VERSION);
+  }
+
+  function fillSelect(sel, ids) {
+    var map = I18N[currentLang].cur;
+    sel.innerHTML = '';
+    ids.forEach(function (id) {
+      var t = map[id] || map.xxx;
+      var label = (CUR_META[id] || CUR_META.xxx).flag + ' ' + t.c;
+      if (t.n) label += ' — ' + t.n;
+      if (t.s && t.s !== t.n) label += ' ' + t.s;
+      var o = document.createElement('option');
+      o.value = id;
+      o.textContent = label;
+      sel.appendChild(o);
+    });
+  }
+
+  /* Курс помним отдельно для каждой валюты: иначе при переезде
+     Корея → Таиланд в поле останется корейский курс и расчёт молча соврёт. */
+  function ratesMap() { try { return JSON.parse(load(KEY_RATES) || '{}'); } catch (e) { return {}; } }
+  function rememberRate(id, val) {
+    if (!id) return;
+    var m = ratesMap();
+    if (m[id] === val) return;
+    m[id] = val;
+    /* Пишем молча, без store(): забытый курс — неудобство, а не потеря расчёта,
+       ругаться на это окном при каждом нажатии клавиши нельзя. */
+    try { localStorage.setItem(KEY_RATES, JSON.stringify(m)); } catch (e) {}
+  }
+  function recallRate(id) {
+    var m = ratesMap();
+    return (typeof m[id] === 'string' && m[id] !== '') ? m[id] : (RATE_DEFAULT[id] || '');
+  }
+
   function applyLang(lang) {
     if (!I18N[lang]) lang = 'ru';
     currentLang = lang;
@@ -652,17 +822,35 @@
     document.getElementById('langSelect').value = lang;
 
     var t = I18N[lang];
-    document.title = t.title;
-    document.getElementById('appTitle').textContent = t.title;
-    document.getElementById('appSub').textContent = t.sub;
+
+    fillSelect(document.getElementById('buyCur'), CUR_LIST_BUY);
+    fillSelect(document.getElementById('dstCur'), CUR_LIST_DST);
+    document.getElementById('buyCur').value = buyCur;
+    document.getElementById('dstCur').value = dstCur;
+    document.getElementById('wrapBuyCurName').hidden = (buyCur !== 'xxx');
+    document.getElementById('wrapDstCurName').hidden = (dstCur !== 'xxx');
+    document.getElementById('lblBuyCur').innerHTML = t.lblBuyCur;
+    document.getElementById('lblDstCur').innerHTML = t.lblDstCur;
+    document.getElementById('lblBuyCurName').textContent = t.lblBuyCurName;
+    document.getElementById('lblDstCurName').textContent = t.lblDstCurName;
+    el.buyCurName.placeholder = t.curNamePlaceholder;
+    el.dstCurName.placeholder = t.curNamePlaceholder;
+    document.getElementById('warnBuyRate').textContent = t.warnRate;
+    document.getElementById('warnDstRate').textContent = t.warnRate;
+
+    var from = curOf(buyCur, el.buyCurName.value).from;
+    var title = from ? t.titleTpl.replace('{FROM}', from) : t.titleGeneric;
+    document.title = title;
+    document.getElementById('appTitle').textContent = title;
+    document.getElementById('appSub').textContent = fill(t.sub);
     document.getElementById('capProduct').textContent = t.capProduct;
     document.getElementById('lblName').textContent = t.lblName;
-    document.getElementById('lblPrice').innerHTML = t.lblPrice;
+    document.getElementById('lblPrice').innerHTML = fill(t.lblPrice);
     document.getElementById('lblPerBox').innerHTML = t.lblPerBox;
     document.getElementById('lblCbm').innerHTML = t.lblCbm;
     document.getElementById('lblWeight').innerHTML = t.lblWeight;
     document.getElementById('capRates').textContent = t.capRates;
-    document.getElementById('lblRateCny').innerHTML = t.lblRateCny;
+    document.getElementById('lblRateCny').innerHTML = fill(t.lblRateCny);
     document.getElementById('lblFreight').innerHTML = t.lblFreight;
     document.getElementById('hintFreight').textContent = t.hintFreight;
     document.getElementById('lblCustomsLegend').textContent = t.lblCustomsLegend;
@@ -672,8 +860,8 @@
     document.getElementById('lblCustomsUnit').innerHTML = t.lblCustomsUnit;
     document.getElementById('lblCustomsKg').innerHTML = t.lblCustomsKg;
     document.getElementById('hintCustomsKg').textContent = t.hintCustomsKg;
-    document.getElementById('lblRateUzs').innerHTML = t.lblRateUzs;
-    document.getElementById('lblExtra').textContent = t.lblExtra;
+    document.getElementById('lblRateUzs').innerHTML = fill(t.lblRateUzs);
+    document.getElementById('lblExtra').textContent = fill(t.lblExtra);
     document.getElementById('hintExtra').textContent = t.hintExtra;
     document.getElementById('capCalc').textContent = t.capCalc;
     document.getElementById('rkGoods').textContent = t.rkGoods;
@@ -702,9 +890,9 @@
 
     document.getElementById('formulaLine').innerHTML = t.formulaLine;
     document.getElementById('footerNote2').textContent = t.footerNote2;
-    document.getElementById('versionLabel').textContent = t.versionPrefix + ' 21.08.2026';
+    document.getElementById('versionLabel').textContent = t.versionPrefix + ' ' + VERSION;
     document.getElementById('feedbackText').textContent = t.feedbackText;
-    document.getElementById('feedback').href = 'https://t.me/Rashiduzt?text=' + encodeURIComponent(t.feedbackMsgPrefix);
+    document.getElementById('feedback').href = 'https://t.me/Rashiduzt?text=' + encodeURIComponent(fill(t.feedbackMsgPrefix));
 
     if (!photoData) {
       var thumb = document.getElementById('thumb');
@@ -718,6 +906,24 @@
   document.getElementById('langSelect').addEventListener('change', function (e) {
     applyLang(e.target.value);
   });
+
+  /* Смена страны: курс уходящей валюты запоминаем, курс новой достаём.
+     applyLang перерисовывает подписи и в конце сам вызывает render(). */
+  document.getElementById('buyCur').addEventListener('change', function (e) {
+    rememberRate(buyCur, el.rateCny.value);
+    buyCur = e.target.value;
+    el.rateCny.value = recallRate(buyCur);
+    applyLang(currentLang);
+  });
+  document.getElementById('dstCur').addEventListener('change', function (e) {
+    rememberRate(dstCur, el.rateUzs.value);
+    dstCur = e.target.value;
+    el.rateUzs.value = recallRate(dstCur);
+    applyLang(currentLang);
+  });
+  /* Своё название валюты — обновляем все подписи, а не только число */
+  el.buyCurName.addEventListener('input', function () { applyLang(currentLang); });
+  el.dstCurName.addEventListener('input', function () { applyLang(currentLang); });
 
   var mode = 'unit';
   var photoData = '';
@@ -740,8 +946,21 @@
     var n = parseFloat(String(v == null ? '' : v).replace(/\s/g, '').replace(',', '.'));
     return isFinite(n) ? n : 0;
   }
-  function usd(n) { return '$' + n.toFixed(2).replace('.', ','); }
-  function uzs(n) { return Math.round(n).toLocaleString('ru-RU').replace(/,/g, ' ') + ' ' + tr('currencyWord'); }
+  /* Своё форматирование, без toLocaleString: разделитель разрядов и запятая
+     должны выглядеть одинаково в любом браузере и при любом языке интерфейса. */
+  function fmt(n, d) {
+    if (!isFinite(n)) return '—';
+    var s = Math.abs(n).toFixed(d).split('.');
+    s[0] = s[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return (n < 0 ? '-' : '') + s.join(',');
+  }
+  function usd(n) { return '$' + fmt(n, 2); }
+  /* Деньги валюты прихода. c — валюта конкретной записи (для сохранённых
+     товаров, посчитанных в другой стране); по умолчанию текущая. */
+  function money(n, c) {
+    c = c || dstOf();
+    return fmt(n, c.dec) + ' ' + c.sym;
+  }
 
   function calcFrom(o) {
     var perBox = num(o.perBox);
@@ -764,22 +983,36 @@
 
   function render() {
     var r = calc();
-    document.getElementById('oGoods').textContent = usd(r.goods);
+    /* Курс не вписан — считать нечем. Показываем прочерк и предупреждение:
+       ноль на экране человек примет за настоящую цену. */
+    var okB = num(el.rateCny.value) > 0;
+    var okD = num(el.rateUzs.value) > 0;
+    var dash = '—';
+
+    document.getElementById('warnBuyRate').hidden = okB;
+    document.getElementById('warnDstRate').hidden = okD;
+
+    document.getElementById('oGoods').textContent = okB ? usd(r.goods) : dash;
     document.getElementById('oLogi').textContent = usd(r.freight + r.customs);
     document.getElementById('oFreight').textContent = usd(r.freight);
     document.getElementById('oCustoms').textContent = usd(r.customs);
-    document.getElementById('oExtra').textContent = r.extra ? uzs(r.extra) : '—';
-    document.getElementById('oUsd').textContent = usd(r.total);
-    document.getElementById('oBox').textContent = r.perBox > 0
-      ? tr('boxWhole') + usd(r.total * r.perBox) + ' · ' + uzs(r.sum * r.perBox)
-      : tr('boxNeedQty');
-    document.getElementById('barUsd').textContent = usd(r.total);
-    document.getElementById('barUzs').textContent = uzs(r.sum);
+    document.getElementById('oExtra').textContent = (r.extra && okD) ? money(r.extra) : dash;
+    document.getElementById('oUsd').textContent = okB ? usd(r.total) : dash;
+    document.getElementById('oBox').textContent = r.perBox <= 0
+      ? tr('boxNeedQty')
+      : (okB
+          ? tr('boxWhole') + usd(r.total * r.perBox) + (okD ? ' · ' + money(r.sum * r.perBox) : '')
+          : dash);
+    document.getElementById('barUsd').textContent = okB ? usd(r.total) : dash;
+    document.getElementById('barUzs').textContent = (okB && okD) ? money(r.sum) : dash;
+
+    rememberRate(buyCur, el.rateCny.value);
+    rememberRate(dstCur, el.rateUzs.value);
     store(KEY_CUR, JSON.stringify(snapshot()));
   }
 
   function snapshot() {
-    var o = { mode: mode, photo: photoData };
+    var o = { mode: mode, photo: photoData, buyCur: buyCur, dstCur: dstCur };
     F.forEach(function (id) { o[id] = el[id].value; });
     return o;
   }
@@ -787,9 +1020,12 @@
   function apply(o) {
     if (!o) return;
     F.forEach(function (id) { if (typeof o[id] === 'string') el[id].value = o[id]; });
+    /* Записи, сохранённые до появления выбора стран, — это Китай → Узбекистан */
+    buyCur = CUR_META[o.buyCur] ? o.buyCur : 'cny';
+    dstCur = CUR_META[o.dstCur] ? o.dstCur : 'uzs';
     setMode(o.mode === 'kg' ? 'kg' : 'unit');
     setPhoto(o.photo || '');
-    render();
+    applyLang(currentLang);   /* подписи под валюты записи, в конце сам вызовет render() */
   }
 
   function setMode(m) {
@@ -1031,18 +1267,33 @@
 
     var rows = [], media = [], anchors = [];
 
+    /* Значение с обозначением валюты. Строки в одном файле могут быть посчитаны
+       в разных странах, поэтому валюта пишется в самой ячейке, а не в шапке. */
+    function wc(v, suffix) {
+      v = String(v == null ? '' : v).trim();
+      return v ? v + ' ' + suffix : '';
+    }
+
     list.forEach(function (it, idx) {
       var r = calcFrom(it);
+      var b = curOf(CUR_META[it.buyCur] ? it.buyCur : 'cny', it.buyCurName);
+      var d = curOf(CUR_META[it.dstCur] ? it.dstCur : 'uzs', it.dstCurName);
       var customs = it.mode === 'kg'
         ? (it.customsKg || '0') + tr('customsPerKg')
         : (it.customsUnit || '0') + tr('customsPerUnit');
 
       rows.push([
         '', it.name || tr('noName'),
-        it.priceCny || '', it.perBox || '', it.cbm || '', it.weight || '',
-        it.rateCny || '', it.freight || '', customs, it.rateUzs || '', it.extraUzs || '0',
+        b.country,
+        wc(it.priceCny, b.sym),
+        it.perBox || '', it.cbm || '', it.weight || '',
+        wc(it.rateCny, b.sym + '/$'),
+        it.freight || '', customs,
+        d.country,
+        wc(it.rateUzs, d.sym + '/$'),
+        wc(it.extraUzs || '0', d.sym),
         r.total.toFixed(2).replace('.', ','),
-        String(Math.round(r.sum))
+        fmt(r.sum, d.dec) + ' ' + d.sym
       ]);
 
       if (it.photo && /^data:image\/(jpeg|jpg|png)/i.test(it.photo)) {
@@ -1059,7 +1310,7 @@
       '<cols>' +
       '<col min="1" max="1" width="10" customWidth="1"/>' +
       '<col min="2" max="2" width="38" customWidth="1"/>' +
-      '<col min="3" max="13" width="15" customWidth="1"/>' +
+      '<col min="3" max="15" width="15" customWidth="1"/>' +
       '</cols><sheetData>';
 
     function cellsFor(arr, rowNum, styled) {
@@ -1171,7 +1422,7 @@
   document.getElementById('save').addEventListener('click', function () {
     var o = snapshot();
     o.name = (el.name.value || '').trim() || tr('noName');
-    o.sumText = uzs(calc().sum);
+    o.sumText = money(calc().sum);
     var a = items();
 
     /* Раньше здесь искали товар с тем же названием и молча заменяли его —
