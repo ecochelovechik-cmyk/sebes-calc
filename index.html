@@ -264,8 +264,11 @@
     font-family: var(--sans); font-size: 18px; font-weight: 700;
     border-radius: 14px; padding: 18px; border: none; cursor: pointer;
   }
-  .fs-btn-yes { background: var(--accent); color: var(--on-accent); }
+  /* «Нет» — обычная уверенная кнопка, как остальные в приложении: это безопасный выбор,
+     ему и положено быть заметнее. «Да, удалить» намеренно приглушена — яркая заливка
+     сама подталкивает ткнуть не глядя, а тут лучше секунда сомнения, чем случайная потеря. */
   .fs-btn-no { background: var(--field); color: var(--ink); border: 1px solid var(--line); }
+  .fs-btn-yes { background: transparent; color: var(--accent); border: 1px solid var(--line); font-weight: 600; }
   ul.saved img { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; flex: none; }
   ul.saved input[type="checkbox"], .allpick input[type="checkbox"] {
     width: 18px; height: 18px; flex: none; accent-color: var(--accent); cursor: pointer;
