@@ -239,6 +239,12 @@
   ul.saved .nm { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   ul.saved .pr { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--good); white-space: nowrap; }
   ul.saved button { background: none; border: 0; color: var(--ink-2); font-size: 15px; cursor: pointer; padding: 2px 4px; font-family: var(--sans); }
+  /* Второй тап для удаления: кнопка временно становится заметной,
+     чтобы случайный тап по списку не стирал товар безвозвратно. */
+  ul.saved button.confirm {
+    background: var(--accent); color: var(--on-accent);
+    border-radius: 7px; font-size: 12px; font-weight: 700; padding: 4px 8px;
+  }
   ul.saved img { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; flex: none; }
   ul.saved input[type="checkbox"], .allpick input[type="checkbox"] {
     width: 18px; height: 18px; flex: none; accent-color: var(--accent); cursor: pointer;
@@ -421,6 +427,15 @@
     <div class="hint" id="dlHint" hidden>Сохранится файл Excel: таблица с ценой, доставкой, растаможкой и себестоимостью, фото товара — прямо в ячейках.</div>
   </section>
 
+  <!-- 5. КОРЗИНА: удалённые товары, можно вернуть -->
+  <section id="trashSection" hidden>
+    <div class="cap" id="capTrash">Удалённые</div>
+    <ul class="saved" id="trashList"></ul>
+    <div class="btns">
+      <button type="button" class="act" id="clearTrash">Очистить корзину</button>
+    </div>
+  </section>
+
   <footer>
     <details class="help">
       <summary id="helpSummary">❓ Как пользоваться</summary>
@@ -445,7 +460,7 @@
 
 <script>
 (function () {
-  var VERSION = '01.09.2026';
+  var VERSION = '29.09.2026';
 
   /* Имена полей исторические: priceCny/rateCny — цена и курс валюты ЗАКУПА
      (не обязательно юань), rateUzs/extraUzs — валюты ПРИХОДА (не обязательно сум).
@@ -539,8 +554,13 @@
       downloadLabel: "Скачать Excel",
       emptyState: "Пока пусто. Заполните поля и нажмите «Сохранить товар» — расчёт останется в телефоне.",
       dlHint: "Сохранится файл Excel: таблица с ценой, доставкой, растаможкой и себестоимостью, фото товара — прямо в ячейках.",
+      capTrash: "Удалённые",
+      restoreBtn: "Вернуть",
+      clearTrashBtn: "Очистить корзину",
+      clearTrashConfirm: "Удалить безвозвратно всё из корзины?",
       openBtn: "Открыть",
       deleteTitle: "Удалить",
+      deleteConfirm: "Точно?",
       pickAriaPrefix: "Выбрать «",
       pickAriaSuffix: "» для скачивания",
       noName: "Без названия",
@@ -629,8 +649,13 @@
       downloadLabel: "Excel yuklab olish",
       emptyState: "Hozircha bo'sh. Maydonlarni to'ldiring va «Mahsulotni saqlash»ni bosing — hisob telefonda qoladi.",
       dlHint: "Excel fayli yuklanadi: narx, yetkazish, bojxona va tan narx jadvali, mahsulot surati — katakchalarning o'zida.",
+      capTrash: "O'chirilganlar",
+      restoreBtn: "Qaytarish",
+      clearTrashBtn: "Savatni tozalash",
+      clearTrashConfirm: "Savatdagi hammasi butunlay o'chirilsinmi?",
       openBtn: "Ochish",
       deleteTitle: "O'chirish",
+      deleteConfirm: "Rostdanmi?",
       pickAriaPrefix: "Yuklab olish uchun tanlang: «",
       pickAriaSuffix: "»",
       noName: "Nomsiz",
@@ -719,8 +744,13 @@
       downloadLabel: "Download Excel",
       emptyState: "Nothing saved yet. Fill in the fields and tap «Save item» — it stays on your phone.",
       dlHint: "An Excel file will download: price, freight, customs and cost price table, with the item photo right in the cells.",
+      capTrash: "Deleted",
+      restoreBtn: "Restore",
+      clearTrashBtn: "Empty trash",
+      clearTrashConfirm: "Permanently delete everything in the trash?",
       openBtn: "Open",
       deleteTitle: "Delete",
+      deleteConfirm: "Sure?",
       pickAriaPrefix: "Select «",
       pickAriaSuffix: "» for download",
       noName: "Untitled",
@@ -878,6 +908,8 @@
     document.getElementById('downloadLabel').textContent = t.downloadLabel;
     document.getElementById('empty').textContent = t.emptyState;
     document.getElementById('dlHint').textContent = t.dlHint;
+    document.getElementById('capTrash').textContent = t.capTrash;
+    document.getElementById('clearTrash').textContent = t.clearTrashBtn;
     document.getElementById('helpSummary').textContent = t.helpSummary;
 
     var ol = document.getElementById('helpList');
@@ -901,6 +933,7 @@
 
     render();
     drawList();
+    drawTrash();
   }
 
   document.getElementById('langSelect').addEventListener('change', function (e) {
@@ -1145,11 +1178,28 @@
       del.type = 'button';
       del.textContent = '✕';
       del.title = tr('deleteTitle');
+      /* Раньше «✕» удаляла мгновенно, без единого подтверждения — случайный тап
+         при прокрутке списка стирал товар безвозвратно. Теперь нужен второй тап
+         (кнопка на 3 сек становится «Точно?»), а удалённое ещё попадает в корзину. */
       del.addEventListener('click', function () {
-        var b = items();
-        b.splice(i, 1);
-        saveItems(b);
-        drawList();
+        if (del.dataset.confirm === '1') {
+          clearTimeout(del._timer);
+          var b = items();
+          var removed = b.splice(i, 1)[0];
+          saveItems(b);
+          if (removed) pushTrash(removed);
+          drawList();
+          drawTrash();
+          return;
+        }
+        del.dataset.confirm = '1';
+        del.textContent = tr('deleteConfirm');
+        del.classList.add('confirm');
+        del._timer = setTimeout(function () {
+          del.dataset.confirm = '';
+          del.textContent = '✕';
+          del.classList.remove('confirm');
+        }, 3000);
       });
       li.appendChild(del);
 
@@ -1157,6 +1207,74 @@
     });
     updateDownloadState();
   }
+
+  /* ---- корзина удалённых: хранит последние TRASH_MAX штук, чтобы можно было вернуть ---- */
+  var KEY_TRASH = 'sebes.trash.v1';
+  var TRASH_MAX = 20;
+
+  function trashItems() { try { return JSON.parse(load(KEY_TRASH) || '[]'); } catch (e) { return []; } }
+  function saveTrash(a) { return store(KEY_TRASH, JSON.stringify(a)); }
+
+  function pushTrash(it) {
+    var t = trashItems();
+    t.unshift({ item: it, deletedAt: new Date().toISOString() });
+    if (t.length > TRASH_MAX) t = t.slice(0, TRASH_MAX);
+    saveTrash(t);
+  }
+
+  function drawTrash() {
+    var a = trashItems();
+    var ul = document.getElementById('trashList');
+    ul.innerHTML = '';
+    document.getElementById('trashSection').hidden = a.length === 0;
+
+    a.forEach(function (entry, i) {
+      var it = entry.item || entry;
+      var li = document.createElement('li');
+
+      if (it.photo) {
+        var im = document.createElement('img');
+        im.src = it.photo;
+        im.alt = '';
+        li.appendChild(im);
+      }
+
+      var nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = it.name || tr('noName');
+      li.appendChild(nm);
+
+      var pr = document.createElement('span');
+      pr.className = 'pr';
+      pr.textContent = it.sumText || '';
+      li.appendChild(pr);
+
+      var restore = document.createElement('button');
+      restore.type = 'button';
+      restore.textContent = tr('restoreBtn');
+      restore.style.fontSize = '13px';
+      restore.addEventListener('click', function () {
+        var t = trashItems();
+        t.splice(i, 1);
+        saveTrash(t);
+        var list = items();
+        list.unshift(it);
+        saveItems(list);
+        drawList();
+        drawTrash();
+      });
+      li.appendChild(restore);
+
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById('clearTrash').addEventListener('click', function () {
+    if (!trashItems().length) return;
+    if (!confirm(tr('clearTrashConfirm'))) return;
+    saveTrash([]);
+    drawTrash();
+  });
 
   function updateDownloadState() {
     var boxes = [].slice.call(document.querySelectorAll('#list input[type="checkbox"]'));
@@ -1398,14 +1516,35 @@
     var d = new Date();
     var stamp = d.getFullYear() + '-' +
       ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement('a');
-    link.href = url;
-    link.download = 'sebestoimost_' + stamp + '.xlsx';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    triggerDownload(blob, 'sebestoimost_' + stamp + '.xlsx');
+  }
+
+  /* Samsung Internet (особенно в установленном на главный экран PWA) часто
+     не скачивает blob:-ссылки — молча ничего не происходит. data:-ссылка
+     с тем же файлом в base64 там срабатывает надёжно; старый способ через
+     blob-URL оставлен как запасной, если по какой-то причине не прочитался файл. */
+  function triggerDownload(blob, filename) {
+    function clickLink(href) {
+      var link = document.createElement('a');
+      link.href = href;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+    function viaBlobUrl() {
+      var url = URL.createObjectURL(blob);
+      clickLink(url);
+      setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    }
+    try {
+      var reader = new FileReader();
+      reader.onload = function () { clickLink(reader.result); };
+      reader.onerror = viaBlobUrl;
+      reader.readAsDataURL(blob);
+    } catch (e) {
+      viaBlobUrl();
+    }
   }
 
   document.getElementById('download').addEventListener('click', function () {
