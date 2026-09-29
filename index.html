@@ -239,12 +239,33 @@
   ul.saved .nm { flex: 1; min-width: 0; font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   ul.saved .pr { font-family: var(--mono); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--good); white-space: nowrap; }
   ul.saved button { background: none; border: 0; color: var(--ink-2); font-size: 15px; cursor: pointer; padding: 2px 4px; font-family: var(--sans); }
-  /* Второй тап для удаления: кнопка временно становится заметной,
-     чтобы случайный тап по списку не стирал товар безвозвратно. */
-  ul.saved button.confirm {
-    background: var(--accent); color: var(--on-accent);
-    border-radius: 7px; font-size: 12px; font-weight: 700; padding: 4px 8px;
+
+  /* ---------- подтверждение удаления на весь экран ----------
+     Маленькую кнопку легко задеть случайно при прокрутке — здесь пропустить
+     мимо глаз нельзя: занимает весь экран, выбор только явным большим тапом. */
+  .fs-confirm {
+    position: fixed; inset: 0; z-index: 1000;
+    background: var(--paper);
+    display: flex; flex-direction: column;
+    padding: 24px 20px calc(20px + env(safe-area-inset-bottom));
   }
+  .fs-confirm-inner {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 14px; text-align: center;
+  }
+  .fs-confirm-icon { font-size: 48px; }
+  .fs-confirm-title { font-size: 22px; font-weight: 700; color: var(--ink); }
+  .fs-confirm-name {
+    font-size: 16px; font-weight: 600; color: var(--ink-2);
+    overflow-wrap: anywhere; max-width: 320px;
+  }
+  .fs-confirm-btns { display: flex; flex-direction: column; gap: 12px; }
+  .fs-btn {
+    font-family: var(--sans); font-size: 18px; font-weight: 700;
+    border-radius: 14px; padding: 18px; border: none; cursor: pointer;
+  }
+  .fs-btn-yes { background: var(--accent); color: var(--on-accent); }
+  .fs-btn-no { background: var(--field); color: var(--ink); border: 1px solid var(--line); }
   ul.saved img { width: 30px; height: 30px; border-radius: 6px; object-fit: cover; flex: none; }
   ul.saved input[type="checkbox"], .allpick input[type="checkbox"] {
     width: 18px; height: 18px; flex: none; accent-color: var(--accent); cursor: pointer;
@@ -436,6 +457,30 @@
     </div>
   </section>
 
+  <!-- 6. ИСТОРИЯ: черновики, сохранённые сами, пока человек печатал -->
+  <section id="draftsSection" hidden>
+    <div class="cap" id="capDrafts">История</div>
+    <div class="hint" id="draftsHint">Сохраняется само, пока вы печатаете — на случай, если забыли нажать «Сохранить товар».</div>
+    <ul class="saved" id="draftsList"></ul>
+    <div class="btns">
+      <button type="button" class="act" id="clearDrafts">Очистить историю</button>
+    </div>
+  </section>
+
+  <!-- Подтверждение удаления — на весь экран, чтобы случайный тап по списку
+       не стирал товар: выбор виден целиком, промахнуться сложно. -->
+  <div class="fs-confirm" id="deleteModal" hidden>
+    <div class="fs-confirm-inner">
+      <div class="fs-confirm-icon">🗑️</div>
+      <div class="fs-confirm-title" id="deleteModalTitle">Удалить товар?</div>
+      <div class="fs-confirm-name" id="deleteModalName"></div>
+    </div>
+    <div class="fs-confirm-btns">
+      <button type="button" class="fs-btn fs-btn-yes" id="deleteModalConfirm">Да, удалить</button>
+      <button type="button" class="fs-btn fs-btn-no" id="deleteModalCancel">Нет</button>
+    </div>
+  </div>
+
   <footer>
     <details class="help">
       <summary id="helpSummary">❓ Как пользоваться</summary>
@@ -558,9 +603,15 @@
       restoreBtn: "Вернуть",
       clearTrashBtn: "Очистить корзину",
       clearTrashConfirm: "Удалить безвозвратно всё из корзины?",
+      capDrafts: "История",
+      draftsHint: "Сохраняется само, пока вы печатаете — на случай, если забыли нажать «Сохранить товар».",
+      clearDraftsBtn: "Очистить историю",
+      clearDraftsConfirm: "Удалить всю историю черновиков?",
+      deleteModalTitle: "Удалить товар?",
+      deleteModalYes: "Да, удалить",
+      deleteModalNo: "Нет",
       openBtn: "Открыть",
       deleteTitle: "Удалить",
-      deleteConfirm: "Точно?",
       pickAriaPrefix: "Выбрать «",
       pickAriaSuffix: "» для скачивания",
       noName: "Без названия",
@@ -653,9 +704,15 @@
       restoreBtn: "Qaytarish",
       clearTrashBtn: "Savatni tozalash",
       clearTrashConfirm: "Savatdagi hammasi butunlay o'chirilsinmi?",
+      capDrafts: "Tarix",
+      draftsHint: "Yozayotganingizda o'zi saqlanadi — «Mahsulotni saqlash»ni bosishni unutgan holingiz uchun.",
+      clearDraftsBtn: "Tarixni tozalash",
+      clearDraftsConfirm: "Barcha qoralamalar tarixi o'chirilsinmi?",
+      deleteModalTitle: "Mahsulot o'chirilsinmi?",
+      deleteModalYes: "Ha, o'chirish",
+      deleteModalNo: "Yo'q",
       openBtn: "Ochish",
       deleteTitle: "O'chirish",
-      deleteConfirm: "Rostdanmi?",
       pickAriaPrefix: "Yuklab olish uchun tanlang: «",
       pickAriaSuffix: "»",
       noName: "Nomsiz",
@@ -748,9 +805,15 @@
       restoreBtn: "Restore",
       clearTrashBtn: "Empty trash",
       clearTrashConfirm: "Permanently delete everything in the trash?",
+      capDrafts: "History",
+      draftsHint: "Saves itself while you type — in case you forget to tap «Save item».",
+      clearDraftsBtn: "Clear history",
+      clearDraftsConfirm: "Delete the entire draft history?",
+      deleteModalTitle: "Delete this item?",
+      deleteModalYes: "Yes, delete",
+      deleteModalNo: "No",
       openBtn: "Open",
       deleteTitle: "Delete",
-      deleteConfirm: "Sure?",
       pickAriaPrefix: "Select «",
       pickAriaSuffix: "» for download",
       noName: "Untitled",
@@ -910,6 +973,12 @@
     document.getElementById('dlHint').textContent = t.dlHint;
     document.getElementById('capTrash').textContent = t.capTrash;
     document.getElementById('clearTrash').textContent = t.clearTrashBtn;
+    document.getElementById('capDrafts').textContent = t.capDrafts;
+    document.getElementById('draftsHint').textContent = t.draftsHint;
+    document.getElementById('clearDrafts').textContent = t.clearDraftsBtn;
+    document.getElementById('deleteModalTitle').textContent = t.deleteModalTitle;
+    document.getElementById('deleteModalConfirm').textContent = t.deleteModalYes;
+    document.getElementById('deleteModalCancel').textContent = t.deleteModalNo;
     document.getElementById('helpSummary').textContent = t.helpSummary;
 
     var ol = document.getElementById('helpList');
@@ -934,6 +1003,7 @@
     render();
     drawList();
     drawTrash();
+    drawDrafts();
   }
 
   document.getElementById('langSelect').addEventListener('change', function (e) {
@@ -1052,6 +1122,8 @@
 
   function apply(o) {
     if (!o) return;
+    clearTimeout(draftTimer);
+    lastDraftFingerprint = '';
     F.forEach(function (id) { if (typeof o[id] === 'string') el[id].value = o[id]; });
     /* Записи, сохранённые до появления выбора стран, — это Китай → Узбекистан */
     buyCur = CUR_META[o.buyCur] ? o.buyCur : 'cny';
@@ -1085,7 +1157,10 @@
 
   /* ---- ввод ---- */
   F.forEach(function (id) {
-    el[id].addEventListener('input', render);
+    el[id].addEventListener('input', function () {
+      render();
+      scheduleDraftSnapshot();
+    });
   });
 
   /* Обработчик — на каждую кнопку отдельно.
@@ -1179,27 +1254,17 @@
       del.textContent = '✕';
       del.title = tr('deleteTitle');
       /* Раньше «✕» удаляла мгновенно, без единого подтверждения — случайный тап
-         при прокрутке списка стирал товар безвозвратно. Теперь нужен второй тап
-         (кнопка на 3 сек становится «Точно?»), а удалённое ещё попадает в корзину. */
+         при прокрутке списка стирал товар безвозвратно. Теперь маленькую кнопку
+         задеть можно, а окно подтверждения — на весь экран, мимо не промахнёшься. */
       del.addEventListener('click', function () {
-        if (del.dataset.confirm === '1') {
-          clearTimeout(del._timer);
+        openDeleteConfirm(it.name || tr('noName'), function () {
           var b = items();
           var removed = b.splice(i, 1)[0];
           saveItems(b);
           if (removed) pushTrash(removed);
           drawList();
           drawTrash();
-          return;
-        }
-        del.dataset.confirm = '1';
-        del.textContent = tr('deleteConfirm');
-        del.classList.add('confirm');
-        del._timer = setTimeout(function () {
-          del.dataset.confirm = '';
-          del.textContent = '✕';
-          del.classList.remove('confirm');
-        }, 3000);
+        });
       });
       li.appendChild(del);
 
@@ -1274,6 +1339,111 @@
     if (!confirm(tr('clearTrashConfirm'))) return;
     saveTrash([]);
     drawTrash();
+  });
+
+  /* ---- подтверждение удаления на весь экран ---- */
+  var deleteModal = document.getElementById('deleteModal');
+  var pendingDeleteAction = null;
+
+  function openDeleteConfirm(name, onConfirm) {
+    document.getElementById('deleteModalName').textContent = name;
+    pendingDeleteAction = onConfirm;
+    deleteModal.hidden = false;
+  }
+  function closeDeleteConfirm() {
+    deleteModal.hidden = true;
+    pendingDeleteAction = null;
+  }
+  document.getElementById('deleteModalCancel').addEventListener('click', closeDeleteConfirm);
+  document.getElementById('deleteModalConfirm').addEventListener('click', function () {
+    var fn = pendingDeleteAction;
+    closeDeleteConfirm();
+    if (fn) fn();
+  });
+
+  /* ---- история: черновики сохраняются сами, пока человек печатает —
+     подстраховка, если забыли нажать «Сохранить товар». Отдельно от корзины
+     удалённых: тут не то, что стёрли, а то, что вообще не успели сохранить. ---- */
+  var KEY_DRAFTS = 'sebes.drafts.v1';
+  var DRAFTS_MAX = 30;
+  var DRAFT_DEBOUNCE_MS = 2000;
+  var draftTimer = null;
+  var lastDraftFingerprint = '';
+
+  function draftItems() { try { return JSON.parse(load(KEY_DRAFTS) || '[]'); } catch (e) { return []; } }
+  function saveDrafts(a) { return store(KEY_DRAFTS, JSON.stringify(a)); }
+
+  function draftFingerprint(o) {
+    return [o.name, o.priceCny, o.perBox, o.cbm, o.weight].join('|');
+  }
+
+  function scheduleDraftSnapshot() {
+    clearTimeout(draftTimer);
+    draftTimer = setTimeout(function () {
+      var o = snapshot();
+      var meaningful = (o.name || '').trim() !== '' || num(o.priceCny) > 0;
+      if (!meaningful) return;
+      var fp = draftFingerprint(o);
+      if (fp === lastDraftFingerprint) return;
+      lastDraftFingerprint = fp;
+      o.name = (o.name || '').trim() || tr('noName');
+      o.sumText = money(calc().sum);
+      var a = draftItems();
+      a.unshift({ item: o, savedAt: new Date().toISOString() });
+      if (a.length > DRAFTS_MAX) a = a.slice(0, DRAFTS_MAX);
+      saveDrafts(a);
+      drawDrafts();
+    }, DRAFT_DEBOUNCE_MS);
+  }
+
+  function drawDrafts() {
+    var a = draftItems();
+    var ul = document.getElementById('draftsList');
+    ul.innerHTML = '';
+    document.getElementById('draftsSection').hidden = a.length === 0;
+
+    a.forEach(function (entry, i) {
+      var it = entry.item || entry;
+      var li = document.createElement('li');
+
+      if (it.photo) {
+        var im = document.createElement('img');
+        im.src = it.photo;
+        im.alt = '';
+        li.appendChild(im);
+      }
+
+      var nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = it.name || tr('noName');
+      li.appendChild(nm);
+
+      var pr = document.createElement('span');
+      pr.className = 'pr';
+      pr.textContent = it.sumText || '';
+      li.appendChild(pr);
+
+      var open = document.createElement('button');
+      open.type = 'button';
+      open.textContent = tr('openBtn');
+      open.style.fontSize = '13px';
+      open.addEventListener('click', function () {
+        apply(it);
+        editingIndex = null;   /* черновик — не сохранённая запись, Save создаст новую */
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      });
+      li.appendChild(open);
+
+      ul.appendChild(li);
+    });
+  }
+
+  document.getElementById('clearDrafts').addEventListener('click', function () {
+    if (!draftItems().length) return;
+    if (!confirm(tr('clearDraftsConfirm'))) return;
+    saveDrafts([]);
+    lastDraftFingerprint = '';
+    drawDrafts();
   });
 
   function updateDownloadState() {
@@ -1578,6 +1748,8 @@
   });
 
   document.getElementById('reset').addEventListener('click', function () {
+    clearTimeout(draftTimer);
+    lastDraftFingerprint = '';
     editingIndex = null;
     el.name.value = '';
     el.priceCny.value = '';
