@@ -400,6 +400,11 @@
         <input type="text" inputmode="decimal" id="customsKg" value="">
         <span class="hint" id="hintCustomsKg">нужен вес коробки</span>
       </label>
+      <label>
+        <span class="lb" id="lblAgentPct"><b>Комиссия</b> посредника, %</span>
+        <input type="text" inputmode="decimal" id="agentPct" value="3">
+        <span class="hint" id="hintAgentPct">от цены товара, 0 — если без посредника</span>
+      </label>
       <label class="full">
         <span class="lb" id="lblDstCur"><b>Приход груза</b> — страна и валюта</span>
         <select class="sel" id="dstCur"></select>
@@ -429,6 +434,7 @@
       <div class="row"><span class="k" id="rkLogi">Доставка + растаможка 1 шт</span><span class="v" id="oLogi">—</span></div>
       <div class="row sub-row"><span class="k" id="rkFreightSub">из них доставка по объёму</span><span class="v" id="oFreight">—</span></div>
       <div class="row sub-row"><span class="k" id="rkCustomsSub">из них растаможка</span><span class="v" id="oCustoms">—</span></div>
+      <div class="row"><span class="k" id="rkAgent">Комиссия посредника</span><span class="v" id="oAgent">—</span></div>
       <div class="row"><span class="k" id="rkExtra">Доп. расходы</span><span class="v" id="oExtra">—</span></div>
       <div class="row total"><span class="k" id="rkTotal">Себестоимость товара, $</span><span class="v" id="oUsd">—</span></div>
     </div>
@@ -508,13 +514,13 @@
 
 <script>
 (function () {
-  var VERSION = '29.09.2026';
+  var VERSION = '04.10.2026';
 
   /* Имена полей исторические: priceCny/rateCny — цена и курс валюты ЗАКУПА
      (не обязательно юань), rateUzs/extraUzs — валюты ПРИХОДА (не обязательно сум).
      Переименовывать нельзя: под этими ключами лежат уже сохранённые расчёты
      в телефонах у людей. */
-  var F = ['name','priceCny','perBox','cbm','weight','rateCny','freight','customsUnit','customsKg','rateUzs','extraUzs','buyCurName','dstCurName'];
+  var F = ['name','priceCny','perBox','cbm','weight','rateCny','freight','customsUnit','customsKg','agentPct','rateUzs','extraUzs','buyCurName','dstCurName'];
   var el = {};
   F.forEach(function (id) { el[id] = document.getElementById(id); });
 
@@ -582,6 +588,8 @@
       lblCustomsUnit: "Растаможка <b>штука</b>, $",
       lblCustomsKg: "Растаможка <b>кг</b>, $",
       hintCustomsKg: "нужен вес коробки",
+      lblAgentPct: "<b>Комиссия</b> посредника, %",
+      hintAgentPct: "от цены товара, 0 — если без посредника",
       lblRateUzs: "<b>Курс</b> {D} за $",
       lblExtra: "Доп. расходы, {D}/шт",
       hintExtra: "упаковка, доставка до склада",
@@ -590,6 +598,7 @@
       rkLogi: "Доставка + растаможка 1 шт",
       rkFreightSub: "из них доставка по объёму",
       rkCustomsSub: "из них растаможка",
+      rkAgent: "Комиссия посредника",
       rkExtra: "Доп. расходы",
       rkTotal: "Себестоимость товара, $",
       barLabel: "Себестоимость",
@@ -638,7 +647,7 @@
       versionPrefix: "Версия от",
       feedbackText: "✉️ Сообщить о проблеме",
       feedbackMsgPrefix: "Проблема в калькуляторе себестоимости (версия от {V}): ",
-      xlsxHead: ["Фото", "Товар", "Откуда", "Цена за шт", "Кол-во в коробке", "СВМ м³", "Вес кг", "Курс закупа", "Доставка $/м³", "Растаможка", "Куда", "Курс прихода", "Доп. расходы /шт", "Себестоимость $/шт", "Себестоимость /шт"],
+      xlsxHead: ["Фото", "Товар", "Откуда", "Цена за шт", "Кол-во в коробке", "СВМ м³", "Вес кг", "Курс закупа", "Доставка $/м³", "Растаможка", "Комиссия посредника", "Куда", "Курс прихода", "Доп. расходы /шт", "Себестоимость $/шт", "Себестоимость /шт"],
       xlsxSheetName: "Себестоимость",
       customsPerKg: " $/кг",
       customsPerUnit: " $/шт"
@@ -683,6 +692,8 @@
       lblCustomsUnit: "Bojxona <b>dona</b>, $",
       lblCustomsKg: "Bojxona <b>kg</b>, $",
       hintCustomsKg: "quti og'irligi kerak",
+      lblAgentPct: "<b>Vositachi</b> komissiyasi, %",
+      hintAgentPct: "mahsulot narxidan, vositachisiz — 0",
       lblRateUzs: "<b>Kurs</b> {D}/$",
       lblExtra: "Qo'shimcha xarajat, {D}/dona",
       hintExtra: "qadoqlash, omborgacha yetkazish",
@@ -691,6 +702,7 @@
       rkLogi: "Yetkazish + bojxona, 1 dona",
       rkFreightSub: "shundan — hajm bo'yicha yetkazish",
       rkCustomsSub: "shundan — bojxona",
+      rkAgent: "Vositachi komissiyasi",
       rkExtra: "Qo'shimcha xarajat",
       rkTotal: "Tan narxi, $",
       barLabel: "Tan narxi",
@@ -739,7 +751,7 @@
       versionPrefix: "Versiya:",
       feedbackText: "✉️ Muammo haqida yozish",
       feedbackMsgPrefix: "Tan narx kalkulyatoridagi muammo (versiya: {V}): ",
-      xlsxHead: ["Surat", "Mahsulot", "Qayerdan", "Narxi/dona", "Qutidagi soni", "Hajmi m³", "Og'irligi kg", "Xarid kursi", "Yetkazish $/m³", "Bojxona", "Qayerga", "Kelish kursi", "Qo'shimcha xarajat/dona", "Tan narx $/dona", "Tan narx/dona"],
+      xlsxHead: ["Surat", "Mahsulot", "Qayerdan", "Narxi/dona", "Qutidagi soni", "Hajmi m³", "Og'irligi kg", "Xarid kursi", "Yetkazish $/m³", "Bojxona", "Vositachi komissiyasi", "Qayerga", "Kelish kursi", "Qo'shimcha xarajat/dona", "Tan narx $/dona", "Tan narx/dona"],
       xlsxSheetName: "Tan narx",
       customsPerKg: " $/kg",
       customsPerUnit: " $/dona"
@@ -784,6 +796,8 @@
       lblCustomsUnit: "Customs <b>per piece</b>, $",
       lblCustomsKg: "Customs <b>per kg</b>, $",
       hintCustomsKg: "box weight needed",
+      lblAgentPct: "<b>Agent</b> commission, %",
+      hintAgentPct: "of item price, 0 — no agent",
       lblRateUzs: "<b>Rate</b> {D} per $",
       lblExtra: "Extra costs, {D}/pc",
       hintExtra: "packaging, delivery to warehouse",
@@ -792,6 +806,7 @@
       rkLogi: "Freight + customs /pc",
       rkFreightSub: "of which — freight by volume",
       rkCustomsSub: "of which — customs",
+      rkAgent: "Agent commission",
       rkExtra: "Extra costs",
       rkTotal: "Cost price, $",
       barLabel: "Cost price",
@@ -840,7 +855,7 @@
       versionPrefix: "Version:",
       feedbackText: "✉️ Report a problem",
       feedbackMsgPrefix: "Issue in the cost calculator (version: {V}): ",
-      xlsxHead: ["Photo", "Item", "From", "Price /pc", "Qty per box", "Volume m³", "Weight kg", "Buying rate", "Freight $/m³", "Customs", "To", "Arrival rate", "Extra costs /pc", "Cost $/pc", "Cost /pc"],
+      xlsxHead: ["Photo", "Item", "From", "Price /pc", "Qty per box", "Volume m³", "Weight kg", "Buying rate", "Freight $/m³", "Customs", "Agent commission", "To", "Arrival rate", "Extra costs /pc", "Cost $/pc", "Cost /pc"],
       xlsxSheetName: "Cost price",
       customsPerKg: " $/kg",
       customsPerUnit: " $/pc"
@@ -956,6 +971,8 @@
     document.getElementById('lblCustomsUnit').innerHTML = t.lblCustomsUnit;
     document.getElementById('lblCustomsKg').innerHTML = t.lblCustomsKg;
     document.getElementById('hintCustomsKg').textContent = t.hintCustomsKg;
+    document.getElementById('lblAgentPct').innerHTML = t.lblAgentPct;
+    document.getElementById('hintAgentPct').textContent = t.hintAgentPct;
     document.getElementById('lblRateUzs').innerHTML = fill(t.lblRateUzs);
     document.getElementById('lblExtra').textContent = fill(t.lblExtra);
     document.getElementById('hintExtra').textContent = t.hintExtra;
@@ -964,6 +981,7 @@
     document.getElementById('rkLogi').textContent = t.rkLogi;
     document.getElementById('rkFreightSub').textContent = t.rkFreightSub;
     document.getElementById('rkCustomsSub').textContent = t.rkCustomsSub;
+    document.getElementById('rkAgent').textContent = t.rkAgent;
     document.getElementById('rkExtra').textContent = t.rkExtra;
     document.getElementById('rkTotal').textContent = t.rkTotal;
     document.getElementById('barLabel').textContent = t.barLabel;
@@ -1078,11 +1096,12 @@
       ? (perBox > 0 ? num(o.weight) * num(o.customsKg) / perBox : 0)
       : num(o.customsUnit);
 
+    var agent = goods * (num(o.agentPct) / 100);
     var extra = num(o.extraUzs);
-    var total = goods + freight + customs;
+    var total = goods + freight + customs + agent;
     var sum = total * num(o.rateUzs) + extra;
 
-    return { goods: goods, freight: freight, customs: customs, extra: extra, total: total, sum: sum, perBox: perBox };
+    return { goods: goods, freight: freight, customs: customs, agent: agent, extra: extra, total: total, sum: sum, perBox: perBox };
   }
 
   function calc() { return calcFrom(snapshot()); }
@@ -1102,6 +1121,7 @@
     document.getElementById('oLogi').textContent = usd(r.freight + r.customs);
     document.getElementById('oFreight').textContent = usd(r.freight);
     document.getElementById('oCustoms').textContent = usd(r.customs);
+    document.getElementById('oAgent').textContent = okB ? usd(r.agent) : dash;
     document.getElementById('oExtra').textContent = (r.extra && okD) ? money(r.extra) : dash;
     document.getElementById('oUsd').textContent = okB ? usd(r.total) : dash;
     document.getElementById('oBox').textContent = r.perBox <= 0
@@ -1580,6 +1600,7 @@
         it.perBox || '', it.cbm || '', it.weight || '',
         wc(it.rateCny, b.sym + '/$'),
         it.freight || '', customs,
+        (it.agentPct || '0') + '%',
         d.country,
         wc(it.rateUzs, d.sym + '/$'),
         wc(it.extraUzs || '0', d.sym),
@@ -1601,7 +1622,7 @@
       '<cols>' +
       '<col min="1" max="1" width="10" customWidth="1"/>' +
       '<col min="2" max="2" width="38" customWidth="1"/>' +
-      '<col min="3" max="15" width="15" customWidth="1"/>' +
+      '<col min="3" max="16" width="15" customWidth="1"/>' +
       '</cols><sheetData>';
 
     function cellsFor(arr, rowNum, styled) {
