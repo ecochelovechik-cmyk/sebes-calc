@@ -17,7 +17,7 @@
 <body>
 <main>
 <h1>Политика конфиденциальности расширения «Следопыт»</h1>
-<p class="muted">Действует с 28 октября 2026 года.</p>
+<p class="muted">Действует с 28 октября 2026 года, обновлена 13 ноября 2026 года.</p>
 
 <p>«Следопыт» — расширение для браузера, которое показывает на страницах Uzum Market заказы, выручку и остатки
 товаров и магазинов. Цифры считаются на нашем сервере по ежедневным срезам открытых остатков Uzum Market.
@@ -32,6 +32,14 @@
   <li><b>Запросы данных:</b> чтобы показать цифры, расширение отправляет на сервер номера товаров и адрес магазина
     со страниц uzum.uz, которые вы открываете. Эти запросы не сохраняются и не связываются с вашей учётной записью;
     историю просмотров мы не ведём.</li>
+  <li><b>Кабинет продавца (раздел «Мой магазин», по желанию):</b> если вы подключили ключ API кабинета Uzum, сервер
+    по нему только читает ваши заказы, удержания, возвраты и остатки, чтобы посчитать продажи, прибыль и деньги к выплате.
+    Ключ хранится на сервере зашифрованным и удаляется кнопкой «Отключить и удалить ключ».</li>
+  <li><b>«Мои финансы» Uzum (только с вашего согласия):</b> если в кабинете продавца seller.uzum.uz вы нажали «Да, сверять»,
+    расширение раз в 2 часа читает там в вашем браузере сумму к выплате и её дату, сумму «вывести раньше», признак блокировки
+    вывода, общий баланс, удержания за месяц и историю выплат (номер, дата, сумма, тип) и отправляет на сервер только эти
+    суммы и даты — чтобы сверить их с расчётом. Вход в кабинет (пароль, пропуск кабинета) из браузера не передаётся.
+    Отказаться — кнопка «Не надо» или удаление расширения.</li>
 </ul>
 
 <h2>Что хранится в браузере</h2>
@@ -42,7 +50,8 @@
 <ul>
   <li>Не продаём и не передаём данные третьим лицам.</li>
   <li>Не показываем рекламу и не используем данные для рекламы.</li>
-  <li>Не читаем пароли, переписку, платёжные данные и содержимое других сайтов.</li>
+  <li>Не читаем пароли, переписку, платёжные данные и содержимое других сайтов; в кабинете продавца Uzum — только
+    перечисленные выше суммы «Моих финансов» и только после вашего «Да, сверять».</li>
   <li>Не используем данные для оценки кредитоспособности или кредитования.</li>
 </ul>
 
@@ -57,7 +66,7 @@
 <hr>
 
 <h1>Sledopyt — Privacy Policy</h1>
-<p class="muted">Effective October 28, 2026.</p>
+<p class="muted">Effective October 28, 2026, updated November 13, 2026.</p>
 <p>Sledopyt is a browser extension that shows orders, revenue and stock of products and shops on Uzum Market pages.
 Figures are computed on our server from daily snapshots of Uzum Market's public stock data. Access is granted
 by the owner only; there is no public sign-up.</p>
@@ -69,6 +78,14 @@ by the owner only; there is no public sign-up.</p>
   <li><b>Sign-in log:</b> time, login, method and IP address, to prevent password guessing.</li>
   <li><b>Data requests:</b> product IDs and the shop address from uzum.uz pages you open are sent to the server to
     return figures. These requests are not stored and not linked to your account; we keep no browsing history.</li>
+  <li><b>Seller account ("My shop", optional):</b> if you connect an Uzum seller API key, the server uses it read-only to
+    fetch your orders, deductions, returns and stock to compute sales, profit and payouts. The key is stored encrypted and
+    deleted with the "Disconnect and delete key" button.</li>
+  <li><b>Uzum "My finances" (only with your consent):</b> if you clicked "Yes, compare" on seller.uzum.uz, every 2 hours the
+    extension reads there, in your browser, the upcoming payout amount and date, the early-withdrawal amount, the withdrawal
+    block flag, total balance, monthly deductions and payout history (number, date, amount, type), and sends only these
+    amounts and dates to the server to compare them with our calculation. Your seller sign-in (password, session token)
+    never leaves the browser. To opt out, click "No" or remove the extension.</li>
 </ul>
 <h2>Stored in your browser</h2>
 <p>The session token, chosen period, panel state and a temporary cache of received figures, in the extension's
@@ -77,7 +94,8 @@ local storage. Signing out removes the token and the cache.</p>
 <ul>
   <li>We do not sell or transfer data to third parties.</li>
   <li>We do not show ads or use data for advertising.</li>
-  <li>We do not read passwords, messages, payment data or content of other websites.</li>
+  <li>We do not read passwords, messages, payment data or content of other websites; on the Uzum seller site — only the
+    "My finances" amounts listed above, and only after you click "Yes, compare".</li>
   <li>We do not use data to determine creditworthiness or for lending.</li>
 </ul>
 <h2>Transfer and retention</h2>
