@@ -290,6 +290,8 @@
     text-decoration: none;
   }
 
+  .feedback.sled { color: var(--on-accent); background: var(--accent); }
+
   details.help {
     background: var(--card); border: 1px solid var(--line); border-radius: 12px;
     padding: 12px 14px; margin-bottom: 12px;
@@ -499,6 +501,7 @@
     <span id="formulaLine">Себестоимость = ¥ ÷ курс $ &nbsp;+&nbsp; СВМ × тариф ÷ кол-во в коробке &nbsp;+&nbsp; растаможка, всё × курс сума.</span><br>
     <span id="footerNote2">Курсы и тарифы сохраняются автоматически. Работает без интернета.</span><br>
     <b><span id="versionLabel">Версия от 21.08.2026</span></b><br>
+    <a class="feedback sled" id="sledLink" href="https://sledopyt.uz/" target="_blank" rel="noopener"><span id="sledText">📈 Сколько останется на Uzum? — Следопыт</span></a><br>
     <a class="feedback" id="feedback" href="#" target="_blank" rel="noopener"><span id="feedbackText">✉️ Сообщить о проблеме</span></a>
   </footer>
 
@@ -514,7 +517,7 @@
 
 <script>
 (function () {
-  var VERSION = '04.10.2026';
+  var VERSION = '28.11.2026';
 
   /* Имена полей исторические: priceCny/rateCny — цена и курс валюты ЗАКУПА
      (не обязательно юань), rateUzs/extraUzs — валюты ПРИХОДА (не обязательно сум).
@@ -646,6 +649,7 @@
       footerNote2: "Курсы и тарифы сохраняются автоматически. Работает без интернета.",
       versionPrefix: "Версия от",
       feedbackText: "✉️ Сообщить о проблеме",
+      sledText: "📈 Сколько останется на Uzum? — Следопыт",
       feedbackMsgPrefix: "Проблема в калькуляторе себестоимости (версия от {V}): ",
       xlsxHead: ["Фото", "Товар", "Откуда", "Цена за шт", "Кол-во в коробке", "СВМ м³", "Вес кг", "Курс закупа", "Доставка $/м³", "Растаможка", "Комиссия посредника", "Куда", "Курс прихода", "Доп. расходы /шт", "Себестоимость $/шт", "Себестоимость /шт"],
       xlsxSheetName: "Себестоимость",
@@ -750,6 +754,7 @@
       footerNote2: "Kurslar va tariflar avtomatik saqlanadi. Internetsiz ishlaydi.",
       versionPrefix: "Versiya:",
       feedbackText: "✉️ Muammo haqida yozish",
+      sledText: "📈 Uzumda qancha foyda qoladi? — Sledopyt",
       feedbackMsgPrefix: "Tan narx kalkulyatoridagi muammo (versiya: {V}): ",
       xlsxHead: ["Surat", "Mahsulot", "Qayerdan", "Narxi/dona", "Qutidagi soni", "Hajmi m³", "Og'irligi kg", "Xarid kursi", "Yetkazish $/m³", "Bojxona", "Vositachi komissiyasi", "Qayerga", "Kelish kursi", "Qo'shimcha xarajat/dona", "Tan narx $/dona", "Tan narx/dona"],
       xlsxSheetName: "Tan narx",
@@ -854,6 +859,7 @@
       footerNote2: "Rates and tariffs are saved automatically. Works without internet.",
       versionPrefix: "Version:",
       feedbackText: "✉️ Report a problem",
+      sledText: "📈 How much is left on Uzum? — Sledopyt",
       feedbackMsgPrefix: "Issue in the cost calculator (version: {V}): ",
       xlsxHead: ["Photo", "Item", "From", "Price /pc", "Qty per box", "Volume m³", "Weight kg", "Buying rate", "Freight $/m³", "Customs", "Agent commission", "To", "Arrival rate", "Extra costs /pc", "Cost $/pc", "Cost /pc"],
       xlsxSheetName: "Cost price",
@@ -1014,6 +1020,7 @@
     document.getElementById('footerNote2').textContent = t.footerNote2;
     document.getElementById('versionLabel').textContent = t.versionPrefix + ' ' + VERSION;
     document.getElementById('feedbackText').textContent = t.feedbackText;
+    document.getElementById('sledText').textContent = t.sledText;
     document.getElementById('feedback').href = 'https://t.me/Rashiduzt?text=' + encodeURIComponent(fill(t.feedbackMsgPrefix));
 
     if (!photoData) {
